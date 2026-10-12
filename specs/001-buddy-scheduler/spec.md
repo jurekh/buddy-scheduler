@@ -131,8 +131,13 @@ inactive member never appears in any pair.
 
 3. **Given** avoidance constraints make it impossible to pair all members validly,
    **When** pairings are requested, **Then** the tool reports the conflict with
-   sufficient detail for the coordinator to resolve it, and exits without producing
-   partial output.
+   sufficient detail for the coordinator to resolve it, exits without producing
+   partial output, and does not attempt any fallback strategy.
+
+4. **Given** a MIP solver failure that is not caused by infeasible constraints,
+   **When** pairings are requested, **Then** the tool attempts fallback strategies
+   in order (greedy, random, round-robin) and returns a valid result with the
+   solver_profile field indicating which fallback strategy was used.
 
 ---
 
@@ -169,17 +174,23 @@ inactive member never appears in any pair.
   requiring their removal from the team roster.
 - **FR-007**: The tool MUST accept the relative weights of history and timezone
   penalties as parameters at invocation time.
-- **FR-008**: The tool MUST accept a performance profile parameter that lets the caller
-  trade solution optimality for execution speed.
+- **FR-008**: The tool MUST accept a solver profile parameter that adjusts the MIP
+  solver's optimality gap tolerance and branching aggressiveness. Available profiles
+  MUST include at minimum: a fast profile (wider gap tolerance, less aggressive
+  branching), an optimal profile (tight gap tolerance, aggressive branching), and an
+  adaptive profile that automatically selects settings based on team size. The default
+  profile MUST be adaptive.
 - **FR-009**: When history update is requested, the tool MUST persist the new pairings
   to the history store after a successful run.
 - **FR-010**: When no history store exists and history update is requested, the tool
   MUST create a new history store automatically.
 - **FR-011**: When avoidance constraints make a valid complete pairing impossible, the
   tool MUST report the conflict explicitly and exit without producing output.
-- **FR-012**: When the primary optimisation strategy fails or exceeds its time budget,
-  the tool MUST attempt a sequence of progressively simpler fallback strategies before
-  reporting failure.
+- **FR-012**: When the MIP solver raises an exception or returns a non-optimal status
+  that is not attributable to infeasible hard constraints, the tool MUST attempt a
+  sequence of progressively simpler fallback strategies (greedy, random, round-robin)
+  before reporting failure. Infeasibility caused by avoidance constraints MUST be
+  reported immediately without attempting fallback.
 - **FR-016**: The primary optimisation strategy MUST use Mixed Integer Programming
   (MIP) to produce solutions that are provably optimal (or within a defined gap
   tolerance) with respect to the combined history and timezone penalty objectives,
@@ -199,9 +210,15 @@ inactive member never appears in any pair.
   number of times member A and member B have been paired; [A][B] always equals [B][A].
   Diagonal cells [A][A] are unused. Also records a per-member sit-out count used to
   drive fair sit-out rotation.
-- **PairingResult**: The output of a single run. Contains the list of pairs, the
-  sit-out member (if any), a quality score reflecting how well the objectives were
-  satisfied, and run metadata (duration, strategy used, active member count).
+- **PairingResult**: The output of a single run. Contains: the list of pairs; the
+  sit-out member (if any); a success flag; an optimisation score; solve duration;
+  a solver_profile string identifying the profile used — for MIP solutions this is
+  the profile name alone (e.g., "optimal"), for fallback solutions it is the profile
+  name plus the fallback strategy name (e.g., "fast_fallback_greedy_min_penalty");
+  a solver_gap value present only for MIP solutions indicating the achieved gap from
+  theoretical optimum; peak memory usage; inactive member names; and an
+  avoidance_conflicts list present only when the run failed due to infeasible hard
+  constraints.
 
 ## Success Criteria *(mandatory)*
 
@@ -231,6 +248,8 @@ inactive member never appears in any pair.
 - Q: What format must the tool use for structured output? → A: JSON — all structured output (pairs, quality score, metadata, and error payloads) is emitted as JSON to standard output.
 - Q: What algorithm must the primary optimisation strategy use? → A: Mixed Integer Programming (MIP) is required as the primary optimisation method.
 - Q: How is pairing history structured internally? → A: A symmetric matrix of match counts — each cell [A][B] = [B][A] holds the number of times member A and member B have been paired.
+- Q: What does the performance profile control, and what is the default? → A: Profiles adjust MIP solver settings (optimality gap tolerance and branching aggressiveness); they do not switch algorithms. The default profile is adaptive — it automatically selects solver settings based on team size. Fallback strategies (greedy → random → round-robin) are a last resort triggered by solver failure or non-optimal solver status, not by timeout.
+- Q: How does the JSON output signal whether a solution came from MIP or a fallback? → A: The solver_profile field in the result encodes this: a direct MIP solution carries the profile name only (e.g., "optimal"); a fallback solution carries the profile name plus the fallback strategy name (e.g., "fast_fallback_greedy_min_penalty"). The solver_gap field is present only for MIP solutions.
 
 ## Assumptions
 
