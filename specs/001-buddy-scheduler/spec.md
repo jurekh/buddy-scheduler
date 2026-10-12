@@ -148,7 +148,7 @@ inactive member never appears in any pair.
   valid partners exist for either?
 - What happens when a member named in an avoidance list is not present in the team
   roster?
-- What happens when the history store references members no longer in the team?
+- What happens when the history store references members no longer in the team? → Stale entries are silently ignored during pairing. With --update-history and --prune-history, stale entries are removed from the store.
 - What happens when the team file is missing, empty, or structurally malformed?
 - What happens when the history store exists but was partially written (e.g., due to
   an interrupted previous run)?
@@ -182,6 +182,11 @@ inactive member never appears in any pair.
   profile MUST be adaptive.
 - **FR-009**: When history update is requested, the tool MUST persist the new pairings
   to the history store after a successful run.
+- **FR-017**: History store entries for members absent from the current team roster
+  MUST be silently ignored during pairing and never cause an error. When both history
+  update and history pruning are requested, the tool MUST remove all stale entries
+  (identifiers not present in the current roster) from the history store as part of
+  the same write.
 - **FR-010**: When no history store exists and history update is requested, the tool
   MUST create a new history store automatically.
 - **FR-011**: When avoidance constraints make a valid complete pairing impossible, the
@@ -198,18 +203,28 @@ inactive member never appears in any pair.
 - **FR-013**: The tool MUST emit all structured results as JSON to standard output.
 - **FR-014**: The tool MUST emit all diagnostic output and error messages to standard
   error, keeping standard output clean for programmatic consumption.
+- **FR-018**: The tool MUST emit operational log messages to standard error at a
+  configurable level (DEBUG, INFO, WARNING, ERROR). The default level MUST be INFO.
+  Log output MUST cover all significant operations: input loading, validation,
+  optimisation start and completion, fallback activations, history reads and writes,
+  and errors. Duration and peak memory usage MUST be logged at INFO level at the end
+  of each run.
 - **FR-015**: The tool MUST validate all inputs before beginning optimisation and
-  report validation failures with actionable descriptions.
+  report validation failures with actionable descriptions. Team roster files MUST be
+  validated as well-formed YAML containing a non-empty list of members. History store
+  files, when present, MUST be validated as well-formed JSON with a consistent
+  internal structure before use.
 
 ### Key Entities
 
-- **TeamMember**: A person on the team. Has a unique identifier, a timezone
-  designation, an active flag (defaults to active), and an optional list of member
-  identifiers who must never be paired with this person.
-- **PairingHistory**: A symmetric matrix of match counts. Each cell [A][B] holds the
-  number of times member A and member B have been paired; [A][B] always equals [B][A].
-  Diagonal cells [A][A] are unused. Also records a per-member sit-out count used to
-  drive fair sit-out rotation.
+- **TeamMember**: A person on the team. Defined in the YAML team roster file. Has a
+  unique identifier, a timezone designation, an active flag (defaults to active), and
+  an optional list of member identifiers who must never be paired with this person.
+- **PairingHistory**: A symmetric matrix of match counts, persisted as a JSON file
+  managed exclusively by the tool. Each cell [A][B] holds the number of times member
+  A and member B have been paired; [A][B] always equals [B][A]. Diagonal cells [A][A]
+  are unused. Also records a per-member sit-out count used to drive fair sit-out
+  rotation.
 - **PairingResult**: The output of a single run. Contains: the list of pairs; the
   sit-out member (if any); a success flag; an optimisation score; solve duration;
   a solver_profile string identifying the profile used — for MIP solutions this is
@@ -250,6 +265,9 @@ inactive member never appears in any pair.
 - Q: How is pairing history structured internally? → A: A symmetric matrix of match counts — each cell [A][B] = [B][A] holds the number of times member A and member B have been paired.
 - Q: What does the performance profile control, and what is the default? → A: Profiles adjust MIP solver settings (optimality gap tolerance and branching aggressiveness); they do not switch algorithms. The default profile is adaptive — it automatically selects solver settings based on team size. Fallback strategies (greedy → random → round-robin) are a last resort triggered by solver failure or non-optimal solver status, not by timeout.
 - Q: How does the JSON output signal whether a solution came from MIP or a fallback? → A: The solver_profile field in the result encodes this: a direct MIP solution carries the profile name only (e.g., "optimal"); a fallback solution carries the profile name plus the fallback strategy name (e.g., "fast_fallback_greedy_min_penalty"). The solver_gap field is present only for MIP solutions.
+- Q: What file formats are used for the team roster and history store? → A: Team roster in YAML (human-authored); history store in JSON (machine-managed).
+- Q: What happens when the history store references members no longer in the current team roster? → A: Stale entries are silently ignored during pairing (never cause an error). When --update-history is used, an additional --prune-history flag MAY be provided to remove entries for absent members from the store.
+- Q: What level of operational logging must the tool provide? → A: Configurable log level (DEBUG / INFO / WARNING / ERROR) via a parameter; default INFO; all log output goes to stderr.
 
 ## Assumptions
 

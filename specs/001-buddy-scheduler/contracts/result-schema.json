@@ -1,0 +1,82 @@
+{
+  "_comment": "buddy-scheduler JSON output schema. Emitted to stdout on every execution path.",
+
+  "_always_present": {
+    "success":            "boolean — true if a valid pairing was produced (MIP or fallback)",
+    "timestamp":          "string — ISO 8601 UTC timestamp of run completion",
+    "pairs":              "array of [string, string] — member pairs; empty on failure",
+    "sitting_out":        "string|null — name of sit-out member (odd teams); null otherwise",
+    "optimization_score": "number — total weighted penalty; 0.0 on failure",
+    "solve_time":         "number — wall-clock seconds for the full run",
+    "solver_profile":     "string — resolved profile (see encoding below)",
+    "history_updated":    "boolean — true if history store was modified this run"
+  },
+
+  "_conditionally_present": {
+    "solver_gap":         "number — achieved MIP gap fraction; present only for direct MIP solutions",
+    "peak_memory_mb":     "number — peak RSS memory in MB; present when psutil available",
+    "memory_delta_mb":    "number — memory increase from start to peak; present when psutil available",
+    "inactive_members":   "array of string — names of inactive members excluded from pairing; omitted if empty",
+    "avoidance_conflicts":"array of string — human-readable conflict descriptions; present only when success=false due to infeasible hard constraints",
+    "error":              "string — error message; present only on unexpected exception"
+  },
+
+  "_solver_profile_encoding": {
+    "direct MIP solution": "<resolved_profile>  (e.g. \"optimal\", \"balanced\", \"fast\")",
+    "fallback solution":   "<resolved_profile>_fallback_<strategy>  (e.g. \"fast_fallback_greedy_min_penalty\")",
+    "note":                "When --solver-profile adaptive is used, the resolved profile name is emitted, not \"adaptive\""
+  },
+
+  "_examples": {
+    "success_mip": {
+      "success": true,
+      "timestamp": "2026-02-24T10:30:45.123456Z",
+      "pairs": [["Alice", "Bob"], ["Charlie", "Diana"]],
+      "sitting_out": null,
+      "optimization_score": 15.432,
+      "solve_time": 2.456,
+      "solver_profile": "optimal",
+      "solver_gap": 0.00042,
+      "peak_memory_mb": 245.67,
+      "memory_delta_mb": 12.34,
+      "inactive_members": ["Eve"],
+      "history_updated": false
+    },
+    "success_fallback": {
+      "success": true,
+      "timestamp": "2026-02-24T10:30:47.654321Z",
+      "pairs": [["Alice", "Bob"], ["Charlie", "Diana"]],
+      "sitting_out": null,
+      "optimization_score": 18.765,
+      "solve_time": 5.123,
+      "solver_profile": "fast_fallback_greedy_min_penalty",
+      "peak_memory_mb": 198.45,
+      "memory_delta_mb": 5.67,
+      "history_updated": false
+    },
+    "failure_infeasible": {
+      "success": false,
+      "timestamp": "2026-02-24T10:30:46.000000Z",
+      "pairs": [],
+      "sitting_out": null,
+      "optimization_score": 0.0,
+      "solve_time": 1.234,
+      "solver_profile": "balanced",
+      "avoidance_conflicts": [
+        "Alice cannot be paired: all eligible partners are in her avoidance list"
+      ],
+      "history_updated": false
+    },
+    "failure_exception": {
+      "success": false,
+      "timestamp": "2026-02-24T10:30:46.000000Z",
+      "pairs": [],
+      "sitting_out": null,
+      "optimization_score": 0.0,
+      "solve_time": 0.0,
+      "solver_profile": "adaptive",
+      "error": "Team file not found: 'team.yaml'",
+      "history_updated": false
+    }
+  }
+}

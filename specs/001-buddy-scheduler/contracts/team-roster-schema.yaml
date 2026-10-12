@@ -1,0 +1,39 @@
+# Team Roster Schema
+# Format: YAML list of member objects
+# Required: at least one entry
+
+# Schema (each list item):
+# name:           string, required, unique within file
+# timezone:       string, required, non-empty, free-form (e.g. "UTC+1", "America/New_York")
+# active:         boolean, optional, default: true
+# avoid_buddies:  list of strings, optional, default: []
+#                 Each string must be a member name (unknown names are silently ignored)
+
+# --- Example ---
+
+- name: Alice
+  timezone: "UTC+0"
+  active: true
+  avoid_buddies:
+    - Bob
+
+- name: Bob
+  timezone: "UTC+0"
+  # active defaults to true
+  # avoid_buddies defaults to []
+
+- name: Charlie
+  timezone: "America/New_York"
+  active: false   # Excluded from pairing
+
+- name: Diana
+  timezone: "America/New_York"
+  avoid_buddies:
+    - Charlie
+
+# --- Validation errors ---
+# - Empty file or empty list: FileLoadError
+# - Missing required field (name or timezone): DataValidationError
+# - Duplicate name values: DataValidationError
+# - Non-boolean active field: DataValidationError
+# - Non-list avoid_buddies field: DataValidationError

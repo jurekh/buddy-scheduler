@@ -1,0 +1,51 @@
+{
+  "_comment": "buddy-scheduler history store schema. Managed exclusively by the tool.",
+
+  "_schema": {
+    "matrix": {
+      "_description": "Symmetric match-count matrix. Keys are member names (strings). Values are objects mapping partner names to non-negative integer counts. matrix[A][B] must equal matrix[B][A]. Missing entries implicitly equal 0.",
+      "_type": "object",
+      "_keys": "string (member name)",
+      "_values": {
+        "_type": "object",
+        "_keys": "string (partner name)",
+        "_values": "integer >= 0"
+      }
+    },
+    "sit_out_counts": {
+      "_description": "Per-member sit-out count. Keys are member names. Values are non-negative integers. Missing entries implicitly equal 0.",
+      "_type": "object",
+      "_keys": "string (member name)",
+      "_values": "integer >= 0"
+    }
+  },
+
+  "_example": {
+    "matrix": {
+      "Alice": { "Bob": 2, "Charlie": 1, "Diana": 0 },
+      "Bob":   { "Alice": 2, "Charlie": 0, "Diana": 1 },
+      "Charlie": { "Alice": 1, "Bob": 0, "Diana": 2 },
+      "Diana": { "Alice": 0, "Bob": 1, "Charlie": 2 }
+    },
+    "sit_out_counts": {
+      "Alice": 1,
+      "Bob": 0,
+      "Charlie": 2,
+      "Diana": 0
+    }
+  },
+
+  "_validation_rules": [
+    "matrix must be symmetric: matrix[A][B] == matrix[B][A] for all stored pairs",
+    "all count values must be non-negative integers",
+    "sit_out_counts values must be non-negative integers",
+    "entries for members absent from the current team roster are silently ignored during pairing",
+    "entries are pruned only when --prune-history is requested with --update-history"
+  ],
+
+  "_write_contract": [
+    "written atomically: temp file in same directory -> fsync -> os.replace",
+    "previous version backed up to <path>.backup before rename",
+    "concurrent write access serialised with fcntl.lockf(LOCK_EX)"
+  ]
+}
