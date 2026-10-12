@@ -225,51 +225,8 @@ def solve_pairing(
             error="Infeasible: avoidance constraints prevent a valid pairing.",
         )
 
-    # Solver failure — attempt fallback chain
     status_str = pulp.constants.LpStatus.get(status, str(status))
-    logger.warning(
-        "MIP solver returned status %s, attempting fallback: greedy", status_str
+    raise OptimizationError(
+        f"MIP solver failed with status '{status_str}'. "
+        "Try a different --solver-profile or reduce avoidance constraints."
     )
-
-    from buddy_scheduler.solver.fallback import (  # noqa: PLC0415
-        greedy_min_penalty,
-        random_pairing,
-        round_robin_pairing,
-    )
-
-    result = greedy_min_penalty(
-        members=members,
-        history_weight=history_weight,
-        tz_weight=tz_weight,
-        history=history,
-        avoidance_pairs=all_avoidance,
-        profile_name=resolved_profile_name,
-    )
-    if result.success:
-        return result
-
-    logger.warning("greedy failed, attempting fallback: random")
-    result = random_pairing(
-        members=members,
-        history_weight=history_weight,
-        tz_weight=tz_weight,
-        history=history,
-        avoidance_pairs=all_avoidance,
-        profile_name=resolved_profile_name,
-    )
-    if result.success:
-        return result
-
-    logger.warning("random failed, attempting fallback: round_robin")
-    result = round_robin_pairing(
-        members=members,
-        history_weight=history_weight,
-        tz_weight=tz_weight,
-        history=history,
-        avoidance_pairs=all_avoidance,
-        profile_name=resolved_profile_name,
-    )
-    if result.success:
-        return result
-
-    raise OptimizationError("All fallback strategies exhausted")

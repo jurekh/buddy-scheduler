@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from buddy_scheduler.models import PairingHistory, TeamMember
 from buddy_scheduler.solver.mip import solve_pairing
 from buddy_scheduler.solver.profiles import SolverProfile
@@ -225,7 +223,6 @@ class TestAvoidanceConstraints:
         paired_sets = [frozenset(p) for p in result.pairs]
         assert frozenset({"Alice", "Bob"}) not in paired_sets
 
-    @pytest.mark.slow
     def test_performance_100_members(self) -> None:
         """SC-004: N=100 active members must solve in < 5 seconds."""
         import random
