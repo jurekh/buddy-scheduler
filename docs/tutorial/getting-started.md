@@ -15,11 +15,37 @@ By the end you will have a working installation and will have generated and read
 
 ## Step 1: Install buddy-scheduler
 
-Choose one of the two installation methods. Both produce the same `buddy-scheduler` command.
+Choose the option that matches your situation.
 
-### Option A: Python package (recommended for cross-platform use)
+### Option A: Run from a cloned repository (no install required)
 
-Install using [uv](https://docs.astral.sh/uv/):
+If you have cloned the repository, [uv](https://docs.astral.sh/uv/) can run
+the tool directly from the project source without a separate install step:
+
+```bash
+uv run buddy-scheduler --help
+```
+
+All subsequent `buddy-scheduler` commands in this tutorial can be prefixed with
+`uv run` when using this option.
+
+### Option B: Install from a local source checkout
+
+To install the tool into your uv tool environment from a local checkout:
+
+```bash
+uv tool install .
+```
+
+Verify the installation:
+
+```bash
+buddy-scheduler --help
+```
+
+### Option C: Install from PyPI
+
+Install the published package using [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv tool install buddy-scheduler
@@ -31,19 +57,22 @@ Verify the installation:
 buddy-scheduler --help
 ```
 
-### Option B: Snap package (Linux only)
+### Option D: Snap package (Linux only)
 
 ```bash
 sudo snap install buddy-scheduler --classic
 ```
+
+The `--classic` flag is required because the tool reads files from
+user-specified paths that may be outside the directories accessible under
+strict snap confinement (for example, files on a mounted network share or
+outside `$HOME`).
 
 Verify the installation:
 
 ```bash
 buddy-scheduler --help
 ```
-
-Both options install the same tool. If your platform does not support snap, use Option A.
 
 ---
 

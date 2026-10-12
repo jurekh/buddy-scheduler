@@ -6,8 +6,7 @@ description: |
   buddy-scheduler pairs team members for buddy check-ins using a
   Mixed Integer Programming (MIP) solver. It respects timezone
   compatibility, historical pairing frequency, and explicit avoidance
-  constraints. Falls back to greedy, random, and round-robin strategies
-  if the MIP solver cannot find a solution.
+  constraints.
 
   Usage:
     buddy-scheduler --team team.yaml --update-history
