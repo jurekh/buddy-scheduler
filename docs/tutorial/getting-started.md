@@ -57,11 +57,19 @@ Verify the installation:
 buddy-scheduler --help
 ```
 
-### Option D: Snap package (Linux only)
+### Option D: Snap package (Linux only, built from source)
+
+Install [snapcraft](https://snapcraft.io/snapcraft) and
+[LXD](https://documentation.ubuntu.com/lxd/), then build and install the snap
+from the repository root:
 
 ```bash
-sudo snap install buddy-scheduler
+snapcraft --use-lxd
+sudo snap install --dangerous buddy-scheduler_*.snap
 ```
+
+The `--dangerous` flag is required when installing a locally built snap that
+has not been signed by the Snap Store.
 
 Verify the installation:
 
