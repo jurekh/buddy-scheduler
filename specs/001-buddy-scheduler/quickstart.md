@@ -80,7 +80,7 @@ buddy-scheduler --team team.yaml --history history.json \
 ```bash
 # Prioritise timezone compatibility over history avoidance
 buddy-scheduler --team team.yaml --history history.json \
-  --timezone-weight 2.0 --history-weight 0.5
+  --tz-weight 2.0 --history-weight 0.5
 ```
 
 ## Use a specific solver profile
@@ -101,9 +101,6 @@ buddy-scheduler --team team.yaml --log-level DEBUG
 
 # Quiet (errors only)
 buddy-scheduler --team team.yaml --log-level ERROR
-
-# Write logs to a file as well
-buddy-scheduler --team team.yaml --log-file run.log
 ```
 
 ## Consume output programmatically
@@ -123,10 +120,12 @@ fi
 ## Development commands
 
 ```bash
-make setup          # Install dependencies
-make test           # Run tests (excludes benchmarks), print coverage
-make lint           # Run ruff + mypy
-make benchmark      # Run benchmark tests
-make build          # Build distributable package
+make install        # Install project + dev deps via uv
+make test           # Run tests (excludes slow tests), print coverage
+make lint           # Run ruff check
+make format         # Auto-format with ruff
+make typecheck      # Run mypy in strict mode
+make all            # install → test → lint → typecheck
+make build          # Build distributable wheel
 make clean          # Remove build artefacts
 ```

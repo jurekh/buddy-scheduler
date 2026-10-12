@@ -74,11 +74,21 @@ class PairingHistory:
   pairing; they are pruned only when `--prune-history` is requested alongside
   `--update-history`.
 
+**JSON on-disk structure**:
+```json
+{
+  "pair_counts": {"alice": {"bob": 3}, "bob": {"alice": 3}},
+  "sit_out_counts": {"alice": 2, "bob": 0}
+}
+```
+The field name `pair_counts` maps to the `matrix` field in the Python dataclass.
+
 **Write contract**:
 - Written atomically: to a temporary file in the same directory → `fsync` →
   `os.replace` (atomic rename).
 - The previous version is backed up to `<path>.backup` before the rename.
-- Concurrent write access is serialised with `fcntl.lockf(LOCK_EX)`.
+- Concurrent write access is serialised with `py-filelock`:
+  `FileLock(f"{path}.lock", timeout=10)`.
 
 ---
 

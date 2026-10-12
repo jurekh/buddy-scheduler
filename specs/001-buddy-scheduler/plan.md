@@ -1,103 +1,97 @@
 # Implementation Plan: buddy-scheduler
 
-**Branch**: `001-buddy-scheduler` | **Date**: 2026-02-24 | **Spec**: [spec.md](spec.md)
+**Branch**: `001-buddy-scheduler` | **Date**: 2026-02-25 | **Spec**: `specs/001-buddy-scheduler/spec.md`
 **Input**: Feature specification from `/specs/001-buddy-scheduler/spec.md`
 
 ## Summary
 
-Rewrite of the buddy-scheduler CLI tool: generates optimal team buddy pairings using
-Mixed Integer Programming (PuLP/CBC). Inputs are a YAML team roster and an optional
-JSON history store. Output is a JSON document on stdout. Core objectives are
-minimising timezone incompatibility and pairing repetition via configurable penalty
-weights, with hard avoidance constraints and inactive-member filtering. The ADAPTIVE
-solver profile is the default; fallback strategies (greedy → random → round-robin)
-handle solver failures. Test coverage ≥ 80% required; history writes are atomic.
+A CLI tool that generates optimised buddy pairings for a team using Mixed Integer
+Programming (MIP). The tool reads a YAML team roster, optionally loads a JSON
+history store, solves a weighted perfect-matching ILP with PuLP/CBC, emits a JSON
+result to stdout, and optionally persists the new pairings back to the history store.
+Fallback strategies (greedy, random, round-robin) activate only on solver failure —
+not on infeasible constraints, which are reported and exited immediately.
 
 ## Technical Context
 
-**Language/Version**: Python 3.11+
-**Primary Dependencies**: PuLP ≥ 2.7 (MIP/CBC), Click ≥ 8.1, PyYAML ≥ 6.0, psutil ≥ 5.9
-**Storage**: Files — YAML team roster (human-authored), JSON history store (machine-managed)
-**Testing**: pytest ≥ 8, pytest-cov ≥ 6, mypy ≥ 1.0 (strict), ruff ≥ 0.4
-**Target Platform**: Linux (primary), macOS (secondary); distributed as pip package + snap
+**Language/Version**: Python 3.11
+**Package manager**: uv — `uv.lock` committed; `.python-version` pinned to `3.11`
+**Primary Dependencies**: PuLP ≥ 2.7 (MIP/CBC), Click ≥ 8.1, PyYAML ≥ 6.0,
+psutil ≥ 5.9, Pydantic ≥ 2.0 (JSON validation), py-filelock ≥ 3.12 (locking)
+**Storage**: YAML (team roster, human-authored); JSON (history store, machine-managed)
+**Testing**: pytest + pytest-cov; coverage ≥ 80%; `@pytest.mark.slow` gates
+long-running or resource-intensive tests
+**Target Platform**: Linux (primary); macOS compatible; py-filelock is cross-platform
 **Project Type**: CLI tool
-**Performance Goals**: ≤ 5 seconds for 100 active members under the default (adaptive) profile
-**Constraints**: No network access, no database, no daemon mode; offline-only; snap strict confinement
-**Scale/Scope**: 2–100 active members; single team per invocation
+**Performance Goals**: Complete run for N ≤ 100 active members in < 5 s (SC-004)
+**Constraints**: JSON output well-formed on all execution paths; peak memory suitable
+for a CLI process
+**Scale/Scope**: 2–100 active team members per run
 
 ## Constitution Check
 
-*GATE: Must pass before implementation. Re-checked after Phase 1 design.*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### I. Type Safety & Validated Inputs ✅
+### I. Type Safety & Validated Inputs — PASS
 
-- mypy strict mode configured; all modules fully annotated.
-- Input validation occurs at the system boundary before any computation:
-  - YAML team roster validated on load (required fields, unique names, type checks).
-  - JSON history store validated on load (structure, symmetry, non-negative counts).
-  - CLI parameter constraints enforced by Click (types, ranges, mutual dependencies).
-- Exception hierarchy defined: `BuddySchedulerError → FileLoadError | FileSaveError |
-  DataValidationError | OptimizationError`. No bare exceptions permitted.
-- PuLP lacks type stubs; suppressed via `[[tool.mypy.overrides]]` with justification.
+- All public interfaces typed; mypy runs in strict mode as a CI gate
+- Input validation at system boundaries before optimization begins: YAML roster
+  validated after `yaml.safe_load`; JSON history validated with Pydantic v2
+- Typed exception hierarchy: `BuddySchedulerError` base; `FileLoadError`,
+  `FileSaveError`, `DataValidationError`, `OptimizationError` subclasses
 
-### II. Data Integrity ✅
+### II. Data Integrity — PASS
 
-- History JSON writes are atomic: write to temp file in same directory → `fsync` →
-  `os.replace` (atomic rename).
-- Existing history file backed up to `<path>.backup` before every overwrite.
-- Concurrent write access serialised with `fcntl.lockf(LOCK_EX)`.
-- Loaded history validated for symmetry and non-negative counts before use.
+- History store writes are atomic: `tempfile.NamedTemporaryFile` + `os.fsync` +
+  `os.replace`
+- Backup: existing file moved to `<path>.backup` before overwrite
+- File locking: `FileLock(f"{history_path}.lock")` (py-filelock) wraps all reads
+  and writes to the history store
+- All loaded state validated before use (Pydantic for JSON, custom checks for YAML)
 
-### III. Comprehensive Testing ✅
+### III. Comprehensive Testing — PASS
 
-- Coverage gate: ≥ 80%, enforced in `make test` via `--cov-fail-under=80`.
-- Unit tests for all non-trivial logic (models, io, optimizer, fallback, penalties,
-  solver profile selection).
-- Integration tests: full CLI pipeline with real YAML/JSON files via Click's
-  `CliRunner`.
-- Edge-case tests: empty team, one active member, odd team, infeasible constraints,
-  corrupted history, partial writes.
-- Benchmark tests gated behind `@pytest.mark.benchmark`; excluded from default run.
-- Fallback and error paths explicitly tested (not only the happy path).
+- ≥ 80% coverage enforced via `pytest-cov` as a make gate
+- Unit tests for MIP formulation, fallback strategies, history I/O, validators,
+  timezone utility
+- Integration tests covering the full pipeline from YAML input to JSON output
+- Edge-case tests: empty team, single member, odd N, infeasible constraints,
+  corrupted history, stale history entries
+- Slow/resource tests gated behind `@pytest.mark.slow`; excluded from default run
 
-### IV. Transparent Operations ✅
+### IV. Transparent Operations — PASS
 
-- All structured results emitted as JSON to stdout.
-- All diagnostic and log output emitted to stderr.
-- Configurable log level (DEBUG / INFO / WARNING / ERROR), default INFO.
-- Log coverage: input loading, validation, optimisation start/end, fallback
-  activations, history reads/writes, errors.
-- Duration (`solve_time`) and peak memory (`peak_memory_mb`, `memory_delta_mb`)
-  logged at INFO and included in the JSON result.
-- Component logger hierarchy: `buddy_scheduler.cli`, `buddy_scheduler.io`,
-  `buddy_scheduler.optimizer`, `buddy_scheduler.fallback`, `buddy_scheduler.solver`.
+- JSON result (success and failure) always emitted to stdout
+- All log output to stderr at configurable level (DEBUG/INFO/WARNING/ERROR),
+  default INFO
+- Logged at INFO: input load, validation, solve start/end, fallback activations,
+  history I/O, total duration, peak memory (FR-018)
 
-### V. Graceful Degradation ✅
+### V. Graceful Degradation — PASS
 
-- ADAPTIVE solver profile is the default; auto-selects OPTIMAL / BALANCED / FAST
-  based on active team size.
-- Infeasibility from avoidance constraints detected before the MIP solve and reported
-  immediately without attempting fallback.
-- Fallback chain on solver exception or non-optimal non-infeasible status:
-  `greedy_min_penalty → random_pairing → round_robin`.
-- Fallback result flagged in output via `solver_profile` field encoding.
+- Fallback chain: greedy → random → round-robin, activated only on solver failure
+- Infeasibility (avoidance constraints) detected before fallback attempt, reported
+  immediately with `avoidance_conflicts` detail (FR-011)
+- Adaptive solver profile auto-selects settings based on team size (FR-008)
 
-### Code Quality Standards ✅
+### Code Quality — PASS
 
-- Python 3.11+ pinned in `pyproject.toml`; `uv.lock` committed.
-- ruff rules: `E, F, W, I, B, UP, N, A, C4, RET, SIM`; line-length 88.
-- mypy strict mode; PuLP missing-import suppression documented in config.
-- isort enforced by ruff (rule `I`); no wildcard imports.
-- Docstrings required on all public functions and classes.
+- Python 3.11 pinned in `.python-version`; `uv.lock` committed;
+  `requires-python = ">=3.11"` in `pyproject.toml`
+- ruff for linting and formatting; no unresolved violations permitted in CI
+- mypy strict mode; `pulp.*` override for missing stubs declared explicitly
+- Import ordering enforced by ruff isort rules; wildcard imports not permitted
+- Public functions and classes must have docstrings
 
-### Development Workflow ✅
+### Development Workflow — PASS
 
-- All operations via `make <target>`: `setup`, `test`, `test-coverage`, `lint`,
-  `typecheck`, `benchmark`, `build`, `clean`.
-- `make lint` (ruff + mypy) passes before any commit.
-- `make test` enforces coverage ≥ 80% before merge.
-- `uv.lock` updated in same commit as any dependency change.
-- `make build` produces an installable wheel; snap artefact via `make snap`.
+- All operations expressible as `make <target>` using `uv run` internally
+- Lint and typecheck pass before commit
+- Tests run with ≥ 80% coverage before merge
+- `uv add` + `uv.lock` update in same commit
+- `make build` produces distributable wheel
+
+**No violations. Complexity Tracking table not required.**
 
 ## Project Structure
 
@@ -106,63 +100,46 @@ handle solver failures. Test coverage ≥ 80% required; history writes are atomi
 ```text
 specs/001-buddy-scheduler/
 ├── plan.md              # This file
-├── research.md          # Technology and architecture decisions
-├── data-model.md        # Entities, MIP formulation, exception hierarchy
-├── quickstart.md        # Operator usage guide
+├── research.md          # Phase 0 output
+├── data-model.md        # Phase 1 output
+├── quickstart.md        # Phase 1 output
 ├── contracts/
-│   ├── cli.md                    # CLI parameter contract
-│   ├── team-roster-schema.yaml   # Input YAML schema + example
-│   ├── history-store-schema.json # History JSON schema + example
-│   └── result-schema.json        # Output JSON schema + examples
-└── tasks.md             # Generated by /speckit.tasks
+│   └── cli-schema.md    # Phase 1 output
+└── tasks.md             # Phase 2 output (/speckit.tasks — not created here)
 ```
 
-### Source Code (repository root)
+### Source Code
 
 ```text
 src/
 └── buddy_scheduler/
-    ├── __init__.py          # Package version constant
-    ├── cli.py               # Click entry point; JSON serialisation; exit codes
-    ├── models.py            # TeamMember, PairingHistory, OptimizationResult,
-    │                        #   SolverProfile, exception hierarchy
-    ├── io.py                # YAML roster loading; JSON history load/save;
-    │                        #   atomic writes; file locking; backup
-    ├── optimizer.py         # BuddyOptimizer: MIP formulation, constraint
-    │                        #   generation, infeasibility detection
-    ├── fallback.py          # greedy_min_penalty, random_pairing, round_robin
-    ├── penalties.py         # history_penalty, timezone_penalty, sit_out_penalty
-    └── solver.py            # SolverProfile → CBC config mapping;
-                             #   ADAPTIVE resolution by team size
+    ├── __init__.py
+    ├── cli.py           # Click entry point; argument parsing; run orchestration
+    ├── models.py        # TeamMember, PairingHistory, OptimizationResult; typed dataclasses; exception hierarchy
+    ├── history.py       # PairingHistory I/O: load (Pydantic), save (atomic), update, prune
+    ├── solver/
+    │   ├── __init__.py
+    │   ├── mip.py       # PuLP ILP formulation: variables, constraints, objective, solve
+    │   ├── fallback.py  # Greedy, random, round-robin fallback strategies
+    │   └── profiles.py  # SolverProfile enum; CBC option mapping; adaptive threshold logic
+    ├── validator.py     # YAML roster validation; history pre-use checks
+    └── tz_utils.py      # Timezone string similarity via difflib
 
 tests/
+├── contract/
+│   └── test_cli_contract.py   # JSON output schema, exit codes, stdout/stderr routing
 ├── integration/
-│   ├── test_cli.py              # Full pipeline via Click CliRunner
-│   └── test_history_pipeline.py # update-history + prune-history flows
-├── unit/
-│   ├── test_models.py           # Dataclass validation, exception hierarchy
-│   ├── test_io.py               # YAML loading, JSON load/save, atomic write,
-│   │                            #   locking, backup, validation errors
-│   ├── test_optimizer.py        # MIP formulation, constraint generation,
-│   │                            #   infeasibility detection
-│   ├── test_fallback.py         # Each fallback strategy independently
-│   ├── test_penalties.py        # Penalty calculation functions
-│   └── test_solver.py           # Profile→config mapping, ADAPTIVE thresholds
-└── benchmarks/
-    └── test_performance.py      # @pytest.mark.benchmark; 10/50/100 member teams
-
-pyproject.toml      # Project metadata, dependencies, tool config
-Makefile            # Development automation
-uv.lock             # Pinned dependency tree
-snapcraft.yaml      # Snap package definition
+│   └── test_pipeline.py       # Full run: YAML → solve → JSON output, history persistence
+└── unit/
+    ├── test_mip.py             # ILP formulation correctness, constraint coverage, objective
+    ├── test_fallback.py        # Greedy, random, round-robin correctness and avoidance honoring
+    ├── test_history.py         # Atomic write, locking, prune, stale-entry handling
+    ├── test_models.py          # Data model invariants (symmetry, non-negative counts)
+    ├── test_validator.py       # Validation error paths for roster and history
+    └── test_tz_utils.py        # Timezone similarity edge cases
 ```
 
-**Structure Decision**: Single `src/` layout with six focused modules. The `src/`
-directory prevents import shadowing during testing. Six modules map directly to the
-six component loggers required by Constitution Principle IV and keep each concern
-independently unit-testable. No sub-packages are introduced; the codebase is not
-large enough to warrant further nesting.
-
-## Complexity Tracking
-
-> No constitution violations. Table left empty.
+**Structure Decision**: Single-project layout with `src/` package. Solver logic is
+split into a `solver/` sub-package to isolate MIP formulation, fallback strategies,
+and solver profile configuration as independently testable units. No frontend, no
+backend split — this is a pure CLI tool.

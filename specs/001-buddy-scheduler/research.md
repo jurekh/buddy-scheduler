@@ -59,16 +59,36 @@ to the integration test requirement for the full CLI pipeline.
 
 ### 4. Package Manager and Distribution
 
-**Decision**: `uv` with `pyproject.toml`; distributed as a pip-installable package
-and snap.
+**Decision**: `uv` with `pyproject.toml`; distributed as a pip-installable package.
 
 **Rationale**: `uv` generates a lock file (`uv.lock`) and installs reproducibly.
-The CLI entry point is declared as `[project.scripts]`:
-```toml
-[project.scripts]
-buddy-scheduler = "buddy_scheduler.cli:main"
-```
-Snap packaging uses `base: core24`, `plugin: python`.
+`uv.lock` is committed to the repo to guarantee deterministic installs across
+developer machines and CI.
+
+**Key patterns**:
+- Entry point declared under `[project.scripts]`:
+  ```toml
+  [project.scripts]
+  buddy-scheduler = "buddy_scheduler.cli:main"
+  ```
+- Build backend: `hatchling` (standard for uv projects with entry points)
+- Runtime and dev dependencies both in `pyproject.toml`:
+  ```toml
+  [project]
+  requires-python = ">=3.11"
+  dependencies = ["pulp>=2.7", "click>=8.1", "pyyaml>=6.0",
+                  "psutil>=5.9", "pydantic>=2.0", "filelock>=3.12"]
+
+  [dependency-groups]
+  dev = ["pytest>=7.0", "pytest-cov>=4.0", "ruff>=0.5", "mypy>=1.0"]
+  ```
+- Python version pinned in `.python-version` (value: `3.11`) alongside
+  `requires-python = ">=3.11"` in `pyproject.toml`
+- Dev commands use `uv run` (not `uvx`) to access project code:
+  `uv run pytest`, `uv run ruff check .`, `uv run mypy src`
+- `uv sync --all-groups` installs runtime + dev deps; `uv sync --locked` for CI
+- Native binaries (PuLP/CBC): no special configuration; uv selects
+  platform-appropriate wheels automatically
 
 **Alternatives considered**:
 - pip + requirements.txt: no lock file with hashes, non-reproducible.
@@ -119,10 +139,19 @@ Benchmark tests run via `make benchmark` (`pytest -m benchmark`).
 
 ### 7. File Locking
 
-**Decision**: `fcntl.lockf()` (POSIX standard, preferred over `fcntl.flock()`).
+**Decision**: `py-filelock` (`filelock` on PyPI) for cross-platform file locking.
 
-Used exclusively around the atomic write sequence for the history JSON:
-lock → read → write temp → rename → unlock.
+Used exclusively around the history JSON read and write operations:
+`FileLock(f"{history_path}.lock")` as a context manager; timeout 10 s.
+
+**Rationale**: `py-filelock` works on Linux, macOS, and Windows with no native
+binary dependencies. Its context-manager API is simpler than raw `fcntl` and avoids
+platform guards in application code. uv installs it as a lightweight wheel.
+
+**Alternatives considered**:
+- `fcntl.lockf()` (stdlib): Linux/macOS only; requires conditional import or
+  shim for Windows compatibility; rejected for cross-platform portability.
+- `portalocker`: older library, less actively maintained.
 
 ---
 

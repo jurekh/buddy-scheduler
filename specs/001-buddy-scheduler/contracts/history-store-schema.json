@@ -46,6 +46,6 @@
   "_write_contract": [
     "written atomically: temp file in same directory -> fsync -> os.replace",
     "previous version backed up to <path>.backup before rename",
-    "concurrent write access serialised with fcntl.lockf(LOCK_EX)"
+    "concurrent write access serialised with py-filelock: FileLock('<path>.lock', timeout=10)"
   ]
 }
