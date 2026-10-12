@@ -141,3 +141,75 @@ class TestLoadTeamRoster:
         )
         with pytest.raises(DataValidationError, match="avoid_buddies"):
             load_team_roster(p)
+
+
+class TestAvoidBuddiesCrossReference:
+    """Tests for the second-pass avoid_buddies cross-reference validation."""
+
+    def test_avoid_buddies_valid_reference(self, tmp_path: Path) -> None:
+        """avoid_buddies entry that matches a roster member raises no error."""
+        p = _write_yaml(
+            tmp_path,
+            """
+            - name: Alice
+              timezone: UTC
+              avoid_buddies:
+                - Bob
+            - name: Bob
+              timezone: UTC
+            """,
+        )
+        members = load_team_roster(p)
+        assert members[0].avoid_buddies == ["Bob"]
+
+    def test_avoid_buddies_unknown_name(self, tmp_path: Path) -> None:
+        """avoid_buddies entry matching no roster member raises DataValidationError."""
+        p = _write_yaml(
+            tmp_path,
+            """
+            - name: Alice
+              timezone: UTC
+              avoid_buddies:
+                - Alic
+            - name: Bob
+              timezone: UTC
+            """,
+        )
+        with pytest.raises(DataValidationError, match="Alice") as exc_info:
+            load_team_roster(p)
+        assert "Alic" in str(exc_info.value)
+
+    def test_avoid_buddies_inactive_member_valid(self, tmp_path: Path) -> None:
+        """avoid_buddies referencing inactive member is valid (still in roster)."""
+        p = _write_yaml(
+            tmp_path,
+            """
+            - name: Alice
+              timezone: UTC
+              avoid_buddies:
+                - Charlie
+            - name: Bob
+              timezone: UTC
+            - name: Charlie
+              timezone: UTC
+              active: false
+            """,
+        )
+        members = load_team_roster(p)
+        assert members[0].avoid_buddies == ["Charlie"]
+
+    def test_avoid_buddies_self_reference_ignored(self, tmp_path: Path) -> None:
+        """avoid_buddies self-reference is not a validation error."""
+        p = _write_yaml(
+            tmp_path,
+            """
+            - name: Alice
+              timezone: UTC
+              avoid_buddies:
+                - Alice
+            - name: Bob
+              timezone: UTC
+            """,
+        )
+        members = load_team_roster(p)
+        assert members[0].avoid_buddies == ["Alice"]

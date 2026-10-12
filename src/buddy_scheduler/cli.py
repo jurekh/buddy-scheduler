@@ -82,7 +82,7 @@ def _configure_logging(level: str) -> None:
 @click.option(
     "--tz-weight",
     "tz_weight",
-    default=1.0,
+    default=0.5,
     type=float,
     help="Weight applied to timezone incompatibility penalty.",
 )
@@ -157,9 +157,7 @@ def _run(
             f"--history-weight must be >= 0.0, got {history_weight}"
         )
     if tz_weight < 0.0:
-        raise DataValidationError(
-            f"--tz-weight must be >= 0.0, got {tz_weight}"
-        )
+        raise DataValidationError(f"--tz-weight must be >= 0.0, got {tz_weight}")
 
     # Validate solver profile
     try:

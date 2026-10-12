@@ -1,0 +1,11 @@
+- name: Alice
+  timezone: "UTC+0"
+
+- name: Bob
+  timezone: "UTC+0"
+
+- name: Charlie
+  timezone: "America/New_York"
+
+- name: Diana
+  timezone: "America/New_York"

@@ -105,5 +105,15 @@ def load_team_roster(path: Path) -> list[TeamMember]:
             )
         )
 
+    # Second pass: cross-reference avoid_buddies entries against all known names
+    all_names = {m.name for m in members}
+    for member in members:
+        for buddy in member.avoid_buddies:
+            if buddy not in all_names:
+                raise DataValidationError(
+                    f"Member '{member.name}' has unrecognised avoid_buddies entry "
+                    f"'{buddy}' — no member named '{buddy}' exists in the roster"
+                )
+
     logger.info("Loaded %d members from %s", len(members), path)
     return members

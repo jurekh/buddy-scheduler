@@ -1,0 +1,20 @@
+- name: Alice
+  timezone: "UTC+0"
+
+- name: Bob
+  timezone: "UTC+0"
+  avoid_buddies:
+    - Charlie
+
+- name: Charlie
+  timezone: "UTC+0"
+
+- name: Diana
+  timezone: "America/New_York"
+
+- name: Eve
+  timezone: "America/New_York"
+
+- name: Frank
+  timezone: "America/New_York"
+  active: false
