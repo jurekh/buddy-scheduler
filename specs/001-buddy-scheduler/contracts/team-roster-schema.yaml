@@ -7,7 +7,8 @@
 # timezone:       string, required, non-empty, free-form (e.g. "UTC+1", "America/New_York")
 # active:         boolean, optional, default: true
 # avoid_buddies:  list of strings, optional, default: []
-#                 Each string must be a member name (unknown names are silently ignored)
+#                 Each string must be an exact member name present in the same roster.
+#                 Unknown names are a validation error (exit 1), not silently ignored.
 
 # --- Example ---
 
@@ -37,3 +38,4 @@
 # - Duplicate name values: DataValidationError
 # - Non-boolean active field: DataValidationError
 # - Non-list avoid_buddies field: DataValidationError
+# - avoid_buddies entry not matching any roster member name: DataValidationError
