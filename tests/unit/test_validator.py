@@ -63,9 +63,7 @@ class TestLoadTeamRoster:
         with pytest.raises(FileLoadError, match="YAML"):
             load_team_roster(p)
 
-    def test_duplicate_names_raises_data_validation_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_duplicate_names_raises_data_validation_error(self, tmp_path: Path) -> None:
         p = _write_yaml(
             tmp_path,
             """
@@ -85,16 +83,12 @@ class TestLoadTeamRoster:
         with pytest.raises(DataValidationError, match="timezone"):
             load_team_roster(p)
 
-    def test_missing_name_raises_data_validation_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_missing_name_raises_data_validation_error(self, tmp_path: Path) -> None:
         p = _write_yaml(tmp_path, "- timezone: UTC\n")
         with pytest.raises(DataValidationError, match="name"):
             load_team_roster(p)
 
-    def test_non_bool_active_raises_data_validation_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_non_bool_active_raises_data_validation_error(self, tmp_path: Path) -> None:
         p = _write_yaml(
             tmp_path, "- name: Alice\n  timezone: UTC\n  active: yes_string\n"
         )

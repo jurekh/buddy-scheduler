@@ -275,9 +275,7 @@ class TestHistoryFlags:
         history_dir = tmp_path / "histdir"
         history_dir.mkdir()
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["--team", str(p), "--history", str(history_dir)]
-        )
+        result = runner.invoke(main, ["--team", str(p), "--history", str(history_dir)])
         assert result.exit_code == 1
         data = _parse(result.stdout)
         assert data["success"] is False
@@ -288,9 +286,7 @@ class TestHistoryFlags:
         bad_history = tmp_path / "bad.json"
         bad_history.write_text("not json at all", encoding="utf-8")
         runner = CliRunner()
-        result = runner.invoke(
-            main, ["--team", str(p), "--history", str(bad_history)]
-        )
+        result = runner.invoke(main, ["--team", str(p), "--history", str(bad_history)])
         assert result.exit_code == 1
         data = _parse(result.stdout)
         assert data["success"] is False

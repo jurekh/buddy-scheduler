@@ -21,7 +21,10 @@ class TestExceptionHierarchy:
 
     def test_all_subclasses_are_buddy_scheduler_error(self) -> None:
         for cls in [
-            FileLoadError, FileSaveError, DataValidationError, OptimizationError
+            FileLoadError,
+            FileSaveError,
+            DataValidationError,
+            OptimizationError,
         ]:
             exc = cls("msg")
             assert isinstance(exc, BuddySchedulerError)

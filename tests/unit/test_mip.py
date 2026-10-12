@@ -121,9 +121,7 @@ class TestHistoryPenalty:
         for _ in range(10):
             history.increment_pair("Alice", "Bob")
 
-        result = solve_pairing(
-            members, 5.0, 0.0, history, set(), SolverProfile.OPTIMAL
-        )
+        result = solve_pairing(members, 5.0, 0.0, history, set(), SolverProfile.OPTIMAL)
 
         assert result.success
         paired_pairs = [frozenset(p) for p in result.pairs]
@@ -137,9 +135,7 @@ class TestHistoryPenalty:
             history.increment_pair("Alice", "Bob")
 
         # With weight=0 the solver may still pair Alice-Bob (no penalty)
-        result = solve_pairing(
-            members, 0.0, 0.0, history, set(), SolverProfile.OPTIMAL
-        )
+        result = solve_pairing(members, 0.0, 0.0, history, set(), SolverProfile.OPTIMAL)
         assert result.success
         assert len(result.pairs) == 2
 
@@ -154,9 +150,7 @@ class TestTimezonePenalty:
             TeamMember(name="Charlie", timezone="America/New_York"),
             TeamMember(name="Dave", timezone="America/New_York"),
         ]
-        result = solve_pairing(
-            members, 0.0, 10.0, None, set(), SolverProfile.OPTIMAL
-        )
+        result = solve_pairing(members, 0.0, 10.0, None, set(), SolverProfile.OPTIMAL)
 
         assert result.success
         paired_sets = [frozenset(p) for p in result.pairs]
@@ -215,9 +209,7 @@ class TestAvoidanceConstraints:
     def test_explicit_avoidance_pairs_parameter(self) -> None:
         members = _make_members(["Alice", "Bob", "Charlie", "Dave"])
         explicit = {frozenset({"Alice", "Bob"})}
-        result = solve_pairing(
-            members, 0.0, 0.0, None, explicit, SolverProfile.OPTIMAL
-        )
+        result = solve_pairing(members, 0.0, 0.0, None, explicit, SolverProfile.OPTIMAL)
 
         assert result.success
         paired_sets = [frozenset(p) for p in result.pairs]

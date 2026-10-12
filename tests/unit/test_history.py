@@ -49,9 +49,7 @@ class TestLoadHistory:
         with pytest.raises(FileLoadError, match="empty"):
             load_history(p)
 
-    def test_json_array_root_raises_data_validation_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_json_array_root_raises_data_validation_error(self, tmp_path: Path) -> None:
         """A JSON array root (wrong schema) raises DataValidationError."""
         p = tmp_path / "array.json"
         _write_json(p, [1, 2, 3])

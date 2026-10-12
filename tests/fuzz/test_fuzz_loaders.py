@@ -99,9 +99,7 @@ _ROSTER_CORPUS = st.one_of(
                 "name": st.text(min_size=0, max_size=64),
                 "timezone": st.text(min_size=0, max_size=32),
                 "active": st.booleans(),
-                "avoid_buddies": st.lists(
-                    st.text(min_size=1, max_size=20), max_size=5
-                ),
+                "avoid_buddies": st.lists(st.text(min_size=1, max_size=20), max_size=5),
             }
         ),
         min_size=0,
@@ -121,8 +119,9 @@ _HISTORY_CORPUS = st.one_of(
     st.just(_LARGE_JSON_HISTORY),
     st.recursive(
         st.none() | st.booleans() | st.integers() | st.text(),
-        extend=lambda xs: st.lists(xs, max_size=3)
-        | st.dictionaries(st.text(), xs, max_size=3),
+        extend=lambda xs: (
+            st.lists(xs, max_size=3) | st.dictionaries(st.text(), xs, max_size=3)
+        ),
         max_leaves=500,
     ).map(json.dumps),
     st.fixed_dictionaries(
@@ -216,9 +215,7 @@ class TestJsonRecursionSafety:
     Not marked slow — deterministic single example.
     """
 
-    def test_deeply_nested_json_raises_file_load_error(
-        self, tmp_path: Path
-    ) -> None:
+    def test_deeply_nested_json_raises_file_load_error(self, tmp_path: Path) -> None:
         """Deeply nested JSON raises FileLoadError, not RecursionError."""
         import sys
 
@@ -238,9 +235,7 @@ class TestYamlSafeLoadEnforcement:
     """
 
     @pytest.mark.parametrize("tag_content", _PYTHON_YAML_TAGS)
-    def test_python_tag_is_rejected(
-        self, tmp_path: Path, tag_content: str
-    ) -> None:
+    def test_python_tag_is_rejected(self, tmp_path: Path, tag_content: str) -> None:
         """A YAML file containing a Python-specific tag raises FileLoadError."""
         p = tmp_path / "team.yaml"
         p.write_text(tag_content, encoding="utf-8")

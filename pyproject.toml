@@ -5,6 +5,10 @@ build-backend = "hatchling.build"
 [project]
 name = "buddy-scheduler"
 version = "0.1.0"
+description = "MIP-based buddy pairing scheduler for remote teams"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
 dependencies = [
     "pulp>=2.7",
@@ -32,6 +36,18 @@ dev = [
 [tool.hatch.build.targets.wheel]
 packages = ["src/buddy_scheduler"]
 
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/",
+    "tests/",
+    "docs/",
+    "examples/",
+    "README.md",
+    "LICENSE",
+    "pyproject.toml",
+    "uv.lock",
+]
+
 [tool.ruff]
 line-length = 88
 target-version = "py311"
@@ -47,7 +63,6 @@ known-first-party = ["buddy_scheduler"]
 testpaths = ["tests"]
 markers = [
     "slow: long-running tests",
-    "benchmark: performance benchmarks",
 ]
 addopts = "-m 'not slow'"
 

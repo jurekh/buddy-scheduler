@@ -121,14 +121,18 @@ class TestHistoryPipeline:
 
         _, data1 = _run(
             tmp_path,
-            "--team", str(p),
-            "--history", str(history_path),
+            "--team",
+            str(p),
+            "--history",
+            str(history_path),
             "--update-history",
         )
         _, data2 = _run(
             tmp_path,
-            "--team", str(p),
-            "--history", str(history_path),
+            "--team",
+            str(p),
+            "--history",
+            str(history_path),
             "--update-history",
         )
 
@@ -166,8 +170,10 @@ class TestHistoryPipeline:
         )
         code, _ = _run(
             tmp_path,
-            "--team", str(p),
-            "--history", str(history_path),
+            "--team",
+            str(p),
+            "--history",
+            str(history_path),
             "--update-history",
             "--prune-history",
         )

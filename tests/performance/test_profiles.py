@@ -80,9 +80,7 @@ class TestSolveTimeMonotonicity:
     def test_monotonic_10_20_30(self) -> None:
         """solve_time(N=30) >= solve_time(N=10) using solver-reported time."""
         results = [
-            solve_pairing(
-                make_team(n), 0.0, 0.0, None, set(), SolverProfile.ADAPTIVE
-            )
+            solve_pairing(make_team(n), 0.0, 0.0, None, set(), SolverProfile.ADAPTIVE)
             for n in (10, 20, 30)
         ]
         for r in results:
@@ -103,10 +101,10 @@ class TestExplicitProfiles:
     def test_all_explicit_profiles_succeed(self) -> None:
         """fast, balanced, and optimal profiles all succeed on N=20."""
         for profile in (
-            SolverProfile.FAST, SolverProfile.BALANCED, SolverProfile.OPTIMAL
+            SolverProfile.FAST,
+            SolverProfile.BALANCED,
+            SolverProfile.OPTIMAL,
         ):
-            result = solve_pairing(
-                make_team(20), 0.0, 0.0, None, set(), profile
-            )
+            result = solve_pairing(make_team(20), 0.0, 0.0, None, set(), profile)
             assert result.success, f"Profile {profile.value} failed on N=20"
             assert result.solver_profile == profile.value

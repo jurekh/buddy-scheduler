@@ -173,9 +173,7 @@ def solve_pairing(
     peak_memory_mb = rss_after / 1_048_576
     memory_delta_mb = (rss_after - rss_before) / 1_048_576
 
-    logger.info(
-        "Solved in %.3fs, peak memory %.1f MB", solve_time, peak_memory_mb
-    )
+    logger.info("Solved in %.3fs, peak memory %.1f MB", solve_time, peak_memory_mb)
 
     if status == pulp.constants.LpStatusOptimal:
         result_pairs: list[tuple[str, str]] = []

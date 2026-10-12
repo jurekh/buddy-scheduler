@@ -1,6 +1,8 @@
 name: buddy-scheduler
 base: core24
 version: "0.1.0"
+title: buddy-scheduler
+license: MIT
 summary: MIP-based buddy pairing scheduler for remote teams
 description: |
   buddy-scheduler pairs team members for buddy check-ins using a

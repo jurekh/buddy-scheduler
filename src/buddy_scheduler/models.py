@@ -119,9 +119,7 @@ class OptimizationResult:
         Optional fields with a ``None`` value are omitted.  Pairs are sorted
         lexicographically within each pair and across pairs.
         """
-        sorted_pairs: list[list[str]] = sorted(
-            [sorted([a, b]) for a, b in self.pairs]
-        )
+        sorted_pairs: list[list[str]] = sorted([sorted([a, b]) for a, b in self.pairs])
         d: dict[str, object] = {
             "success": self.success,
             "pairs": sorted_pairs,

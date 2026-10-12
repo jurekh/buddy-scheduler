@@ -58,9 +58,7 @@ def test_pairwise_stdev_10_members() -> None:
     assert stdev <= 0.5, (
         f"Pairwise std-dev {stdev:.3f} exceeds 0.5 after 15 rounds (N=10)"
     )
-    assert max_gap <= 1, (
-        f"Pairwise max-gap {max_gap} exceeds 1 after 15 rounds (N=10)"
-    )
+    assert max_gap <= 1, f"Pairwise max-gap {max_gap} exceeds 1 after 15 rounds (N=10)"
 
 
 @pytest.mark.slow
@@ -113,9 +111,7 @@ def test_cross_tz_pairings_occur() -> None:
 
     history = simulate_rounds(members, 10, 1.0, 0.0)
 
-    cross_pairings = sum(
-        history.get_pair_count(a, b) for a in group_a for b in group_b
-    )
+    cross_pairings = sum(history.get_pair_count(a, b) for a in group_a for b in group_b)
     assert cross_pairings > 0, (
         "No cross-timezone pairings occurred after 10 rounds; "
         "history-weight should diversify pairings beyond timezone groups"

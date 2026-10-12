@@ -184,18 +184,14 @@ def _run_cli_example(example: DocExample, tmp_path: Path) -> None:
         except json.JSONDecodeError as exc:
             pytest.fail(f"{loc}: output is not valid JSON: {exc}\n{result.output}")
         missing = REQUIRED_SUCCESS_FIELDS - data.keys()
-        assert not missing, (
-            f"{loc}: success output missing required fields: {missing}"
-        )
+        assert not missing, f"{loc}: success output missing required fields: {missing}"
 
 
 def _run_yaml_match(example: DocExample) -> None:
     loc = f"{example.doc_path}:{example.line_no}"
     assert example.fixture is not None
     fixture_path = FIXTURES_DIR / example.fixture
-    assert fixture_path.exists(), (
-        f"{loc}: fixture file not found: {fixture_path}"
-    )
+    assert fixture_path.exists(), f"{loc}: fixture file not found: {fixture_path}"
     actual = fixture_path.read_text(encoding="utf-8").strip()
     expected = example.content.strip()
     assert expected == actual, (

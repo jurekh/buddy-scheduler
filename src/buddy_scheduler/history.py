@@ -32,17 +32,14 @@ class _HistoryModel(BaseModel):
 
     @field_validator("pair_counts")
     @classmethod
-    def check_symmetry(
-        cls, v: dict[str, dict[str, int]]
-    ) -> dict[str, dict[str, int]]:
+    def check_symmetry(cls, v: dict[str, dict[str, int]]) -> dict[str, dict[str, int]]:
         """Verify the pair_counts matrix is symmetric."""
         for a, row in v.items():
             for b, count in row.items():
                 reverse = v.get(b, {}).get(a)
                 if reverse is None or reverse != count:
                     raise ValueError(
-                        f"Asymmetric history matrix: {a}↔{b} "
-                        f"({count} vs {reverse})"
+                        f"Asymmetric history matrix: {a}↔{b} ({count} vs {reverse})"
                     )
         return v
 
@@ -55,16 +52,12 @@ class _HistoryModel(BaseModel):
         for a, row in v.items():
             for b, count in row.items():
                 if count < 0:
-                    raise ValueError(
-                        f"Negative pair count for {a}↔{b}: {count}"
-                    )
+                    raise ValueError(f"Negative pair count for {a}↔{b}: {count}")
         return v
 
     @field_validator("sit_out_counts")
     @classmethod
-    def check_non_negative_sit_outs(
-        cls, v: dict[str, int]
-    ) -> dict[str, int]:
+    def check_non_negative_sit_outs(cls, v: dict[str, int]) -> dict[str, int]:
         """Verify all sit-out counts are non-negative."""
         for name, count in v.items():
             if count < 0:
@@ -97,24 +90,18 @@ def load_history(path: Path) -> PairingHistory:
     try:
         exists = path.exists()
     except OSError as exc:
-        raise FileLoadError(
-            f"Cannot access history file {path}: {exc}"
-        ) from exc
+        raise FileLoadError(f"Cannot access history file {path}: {exc}") from exc
 
     if not exists:
         raise FileLoadError(f"History file not found: {path}")
 
     if path.is_dir():
-        raise FileLoadError(
-            f"History path is a directory, not a file: {path}"
-        )
+        raise FileLoadError(f"History path is a directory, not a file: {path}")
 
     try:
         raw = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
-        raise FileLoadError(
-            f"History file contains invalid UTF-8: {path}"
-        ) from exc
+        raise FileLoadError(f"History file contains invalid UTF-8: {path}") from exc
     except OSError as exc:
         raise FileLoadError(f"Cannot read history file {path}: {exc}") from exc
 
@@ -124,20 +111,14 @@ def load_history(path: Path) -> PairingHistory:
     try:
         data: Any = json.loads(raw)
     except json.JSONDecodeError as exc:
-        raise FileLoadError(
-            f"History file is not valid JSON: {exc}"
-        ) from exc
+        raise FileLoadError(f"History file is not valid JSON: {exc}") from exc
     except RecursionError as exc:
-        raise FileLoadError(
-            f"History file is too deeply nested: {path}"
-        ) from exc
+        raise FileLoadError(f"History file is too deeply nested: {path}") from exc
 
     try:
         model = _HistoryModel.model_validate(data)
     except Exception as exc:
-        raise DataValidationError(
-            f"History validation failed: {exc}"
-        ) from exc
+        raise DataValidationError(f"History validation failed: {exc}") from exc
 
     history = _model_to_history(model)
     logger.info(
@@ -182,9 +163,7 @@ def save_history(history: PairingHistory, path: Path) -> None:
             dir_path = path.parent
             dir_path.mkdir(parents=True, exist_ok=True)
 
-            tmp_fd, tmp_path = tempfile.mkstemp(
-                dir=dir_path, suffix=".tmp"
-            )
+            tmp_fd, tmp_path = tempfile.mkstemp(dir=dir_path, suffix=".tmp")
             try:
                 with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
                     json.dump(payload, f, indent=2, sort_keys=True)

@@ -91,9 +91,7 @@ def test_memory_delta_upper_bound_50_members() -> None:
         for b in names[i + 1 :]:
             history.increment_pair(a, b)
 
-    result = solve_pairing(
-        members, 1.0, 0.0, history, set(), SolverProfile.ADAPTIVE
-    )
+    result = solve_pairing(members, 1.0, 0.0, history, set(), SolverProfile.ADAPTIVE)
 
     assert result.success
     assert result.memory_delta_mb is not None

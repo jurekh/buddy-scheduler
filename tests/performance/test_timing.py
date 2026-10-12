@@ -23,12 +23,12 @@ from .conftest import make_team
 # Per-size thresholds (seconds)
 # ---------------------------------------------------------------------------
 
-SMALL_THRESHOLD_S: float = 30.0       # N ≤ 15  → optimal profile
-MEDIUM_THRESHOLD_S: float = 10.0      # N = 30  → balanced profile
+SMALL_THRESHOLD_S: float = 30.0  # N ≤ 15  → optimal profile
+MEDIUM_THRESHOLD_S: float = 10.0  # N = 30  → balanced profile
 MEDIUM_ODD_THRESHOLD_S: float = 15.0  # N = 35  → balanced profile, odd
-LARGE_ODD_THRESHOLD_S: float = 10.0   # N = 25  → balanced profile, odd
-LARGE_THRESHOLD_S: float = 30.0       # N = 50  → balanced profile
-VERY_LARGE_THRESHOLD_S: float = 5.0   # N = 100 → fast profile
+LARGE_ODD_THRESHOLD_S: float = 10.0  # N = 25  → balanced profile, odd
+LARGE_THRESHOLD_S: float = 30.0  # N = 50  → balanced profile
+VERY_LARGE_THRESHOLD_S: float = 5.0  # N = 100 → fast profile
 DENSE_HISTORY_THRESHOLD_S: float = 10.0  # N = 20 with full history matrix
 
 
@@ -181,9 +181,7 @@ def test_dense_history_timing() -> None:
             history.increment_pair(a, b)
 
     start = time.monotonic()
-    result = solve_pairing(
-        members, 1.0, 0.0, history, set(), SolverProfile.ADAPTIVE
-    )
+    result = solve_pairing(members, 1.0, 0.0, history, set(), SolverProfile.ADAPTIVE)
     elapsed = time.monotonic() - start
 
     assert result.success

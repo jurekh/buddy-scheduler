@@ -16,6 +16,7 @@ test-full:
 
 lint:
 	uv run ruff check src tests
+	uv run ruff format --check src tests
 
 format:
 	uv run ruff format src tests
@@ -30,7 +31,8 @@ snap:
 	snapcraft pack
 
 clean:
-	rm -rf .venv .mypy_cache .ruff_cache dist .pytest_cache htmlcov
+	rm -rf .venv .mypy_cache .ruff_cache .hypothesis dist .pytest_cache htmlcov
+	rm -f .coverage src/.coverage coverage.xml
 	rm -f *.snap
 	rm -rf parts/ prime/ stage/
 	find . -type d -name __pycache__ -exec rm -rf {} +

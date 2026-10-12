@@ -32,35 +32,25 @@ def load_team_roster(path: Path) -> list[TeamMember]:
     try:
         exists = path.exists()
     except OSError as exc:
-        raise FileLoadError(
-            f"Cannot access team roster file {path}: {exc}"
-        ) from exc
+        raise FileLoadError(f"Cannot access team roster file {path}: {exc}") from exc
 
     if not exists:
         raise FileLoadError(f"Team roster file not found: {path}")
 
     if path.is_dir():
-        raise FileLoadError(
-            f"Team roster path is a directory, not a file: {path}"
-        )
+        raise FileLoadError(f"Team roster path is a directory, not a file: {path}")
 
     try:
         raw = path.read_text(encoding="utf-8")
     except UnicodeDecodeError as exc:
-        raise FileLoadError(
-            f"Team roster file contains invalid UTF-8: {path}"
-        ) from exc
+        raise FileLoadError(f"Team roster file contains invalid UTF-8: {path}") from exc
     except OSError as exc:
-        raise FileLoadError(
-            f"Cannot read team roster file {path}: {exc}"
-        ) from exc
+        raise FileLoadError(f"Cannot read team roster file {path}: {exc}") from exc
 
     try:
         data: Any = yaml.safe_load(raw)
     except yaml.YAMLError as exc:
-        raise FileLoadError(
-            f"Team roster file is not valid YAML: {exc}"
-        ) from exc
+        raise FileLoadError(f"Team roster file is not valid YAML: {exc}") from exc
 
     if not data:
         raise FileLoadError(f"Team roster file is empty: {path}")
@@ -77,15 +67,13 @@ def load_team_roster(path: Path) -> list[TeamMember]:
     for i, entry in enumerate(data):
         if not isinstance(entry, dict):
             raise DataValidationError(
-                f"Member entry {i} must be a mapping, "
-                f"got {type(entry).__name__}"
+                f"Member entry {i} must be a mapping, got {type(entry).__name__}"
             )
 
         name = entry.get("name")
         if not name or not isinstance(name, str):
             raise DataValidationError(
-                f"Member entry {i}: 'name' is required and must be a "
-                f"non-empty string"
+                f"Member entry {i}: 'name' is required and must be a non-empty string"
             )
         name = unicodedata.normalize("NFC", name)
 
