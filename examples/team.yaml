@@ -1,0 +1,31 @@
+# Example team roster for buddy-scheduler
+# Usage: buddy-scheduler --team examples/team.yaml
+#
+# Two timezone groups, one inactive member, one avoidance pair.
+
+- name: Alice
+  timezone: "UTC+0"
+
+- name: Bob
+  timezone: "UTC+0"
+  avoid_buddies:
+    - Charlie
+
+- name: Charlie
+  timezone: "UTC+0"
+
+- name: Diana
+  timezone: "America/New_York"
+
+- name: Eve
+  timezone: "America/New_York"
+
+- name: Frank
+  timezone: "America/New_York"
+
+- name: Grace
+  timezone: "UTC+0"
+  active: false
+
+- name: Heidi
+  timezone: "America/New_York"
