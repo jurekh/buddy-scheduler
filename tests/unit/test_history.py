@@ -37,6 +37,34 @@ class TestLoadHistory:
         with pytest.raises(FileLoadError, match="not found"):
             load_history(tmp_path / "no-such-file.json")
 
+    def test_directory_path_raises_file_load_error(self, tmp_path: Path) -> None:
+        """A directory path raises FileLoadError with a clear 'directory' message."""
+        with pytest.raises(FileLoadError, match="directory"):
+            load_history(tmp_path)
+
+    def test_zero_byte_file_raises_file_load_error(self, tmp_path: Path) -> None:
+        """A zero-byte history file raises FileLoadError with an 'empty' message."""
+        p = tmp_path / "empty.json"
+        p.write_bytes(b"")
+        with pytest.raises(FileLoadError, match="empty"):
+            load_history(p)
+
+    def test_json_array_root_raises_data_validation_error(
+        self, tmp_path: Path
+    ) -> None:
+        """A JSON array root (wrong schema) raises DataValidationError."""
+        p = tmp_path / "array.json"
+        _write_json(p, [1, 2, 3])
+        with pytest.raises(DataValidationError):
+            load_history(p)
+
+    def test_json_null_root_raises_error(self, tmp_path: Path) -> None:
+        """A JSON null root raises FileLoadError or DataValidationError."""
+        p = tmp_path / "null.json"
+        p.write_text("null", encoding="utf-8")
+        with pytest.raises((FileLoadError, DataValidationError)):
+            load_history(p)
+
     def test_invalid_json_raises_file_load_error(self, tmp_path: Path) -> None:
         p = tmp_path / "bad.json"
         p.write_text("{ not: valid json", encoding="utf-8")

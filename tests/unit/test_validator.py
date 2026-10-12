@@ -146,6 +146,11 @@ class TestLoadTeamRoster:
 class TestFileAccessErrors:
     """Tests for OSError handling in load_team_roster."""
 
+    def test_team_path_is_directory(self, tmp_path: Path) -> None:
+        """A directory path raises FileLoadError with a clear 'directory' message."""
+        with pytest.raises(FileLoadError, match="directory"):
+            load_team_roster(tmp_path)
+
     def test_permission_error_on_exists_raises_file_load_error(
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:

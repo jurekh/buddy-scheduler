@@ -104,10 +104,18 @@ def load_history(path: Path) -> PairingHistory:
     if not exists:
         raise FileLoadError(f"History file not found: {path}")
 
+    if path.is_dir():
+        raise FileLoadError(
+            f"History path is a directory, not a file: {path}"
+        )
+
     try:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:
         raise FileLoadError(f"Cannot read history file {path}: {exc}") from exc
+
+    if not raw.strip():
+        raise FileLoadError(f"History file is empty: {path}")
 
     try:
         data: Any = json.loads(raw)

@@ -38,6 +38,11 @@ def load_team_roster(path: Path) -> list[TeamMember]:
     if not exists:
         raise FileLoadError(f"Team roster file not found: {path}")
 
+    if path.is_dir():
+        raise FileLoadError(
+            f"Team roster path is a directory, not a file: {path}"
+        )
+
     try:
         raw = path.read_text(encoding="utf-8")
     except OSError as exc:

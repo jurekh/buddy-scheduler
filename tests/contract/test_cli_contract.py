@@ -68,6 +68,42 @@ class TestExitCodes:
         result = runner.invoke(main, ["--team", str(p), "--solver-profile", "turbo"])
         assert result.exit_code == 1
 
+    def test_team_directory_exits_one(self, tmp_path: Path) -> None:
+        runner = CliRunner()
+        result = runner.invoke(main, ["--team", str(tmp_path)])
+        assert result.exit_code == 1
+        data = _parse(result.stdout)
+        assert data["success"] is False
+        assert "error" in data
+
+    def test_history_weight_zero_exits_zero(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(main, ["--team", str(p), "--history-weight", "0.0"])
+        assert result.exit_code == 0
+        data = _parse(result.stdout)
+        assert data["success"] is True
+
+    def test_tz_weight_zero_exits_zero(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(main, ["--team", str(p), "--tz-weight", "0.0"])
+        assert result.exit_code == 0
+        data = _parse(result.stdout)
+        assert data["success"] is True
+
+    def test_history_weight_non_numeric_exits_nonzero(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(main, ["--team", str(p), "--history-weight", "high"])
+        assert result.exit_code != 0
+
+    def test_tz_weight_non_numeric_exits_nonzero(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(main, ["--team", str(p), "--tz-weight", "medium"])
+        assert result.exit_code != 0
+
     def test_negative_history_weight_exits_one(self, tmp_path: Path) -> None:
         p = _valid_team(tmp_path)
         runner = CliRunner()
@@ -233,3 +269,29 @@ class TestHistoryFlags:
         assert result.exit_code == 0
         inferred = tmp_path / "team.history.json"
         assert inferred.exists()
+
+    def test_history_directory_exits_one(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        history_dir = tmp_path / "histdir"
+        history_dir.mkdir()
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["--team", str(p), "--history", str(history_dir)]
+        )
+        assert result.exit_code == 1
+        data = _parse(result.stdout)
+        assert data["success"] is False
+        assert "error" in data
+
+    def test_history_non_json_exits_one(self, tmp_path: Path) -> None:
+        p = _valid_team(tmp_path)
+        bad_history = tmp_path / "bad.json"
+        bad_history.write_text("not json at all", encoding="utf-8")
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["--team", str(p), "--history", str(bad_history)]
+        )
+        assert result.exit_code == 1
+        data = _parse(result.stdout)
+        assert data["success"] is False
+        assert "error" in data
