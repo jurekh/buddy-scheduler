@@ -28,7 +28,14 @@ def load_team_roster(path: Path) -> list[TeamMember]:
         DataValidationError: If any member entry is structurally or
             semantically invalid.
     """
-    if not path.exists():
+    try:
+        exists = path.exists()
+    except OSError as exc:
+        raise FileLoadError(
+            f"Cannot access team roster file {path}: {exc}"
+        ) from exc
+
+    if not exists:
         raise FileLoadError(f"Team roster file not found: {path}")
 
     try:

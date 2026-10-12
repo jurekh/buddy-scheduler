@@ -12,7 +12,7 @@ description: |
     buddy-scheduler --team team.yaml --update-history
 
 grade: stable
-confinement: classic
+confinement: strict
 
 platforms:
   amd64:
@@ -22,21 +22,9 @@ parts:
   buddy-scheduler:
     plugin: python
     source: .
-    build-packages:
-      - python3-dev
-    override-build: |
-      # The python plugin post-install looks for the interpreter binary in the
-      # part's install dir. For classic snaps we copy it from the build container
-      # so the plugin can create the correct symlinks.
-      python_bin="$(readlink -f /usr/bin/python3)"
-      python_name="$(basename "$python_bin")"
-      mkdir -p "$CRAFT_PART_INSTALL/usr/bin"
-      cp "$python_bin" "$CRAFT_PART_INSTALL/usr/bin/$python_name"
-      craftctl default
 
 apps:
   buddy-scheduler:
     command: bin/buddy-scheduler
-    environment:
-      PATH: $SNAP/usr/bin:$SNAP/bin:$PATH
-      PYTHONPATH: $SNAP/lib/python3.12/site-packages:$SNAP/usr/lib/python3/dist-packages
+    plugs:
+      - home

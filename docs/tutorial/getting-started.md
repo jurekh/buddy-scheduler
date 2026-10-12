@@ -60,13 +60,8 @@ buddy-scheduler --help
 ### Option D: Snap package (Linux only)
 
 ```bash
-sudo snap install buddy-scheduler --classic
+sudo snap install buddy-scheduler
 ```
-
-The `--classic` flag is required because the tool reads files from
-user-specified paths that may be outside the directories accessible under
-strict snap confinement (for example, files on a mounted network share or
-outside `$HOME`).
 
 Verify the installation:
 

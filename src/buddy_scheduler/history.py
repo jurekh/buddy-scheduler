@@ -94,7 +94,14 @@ def load_history(path: Path) -> PairingHistory:
         DataValidationError: If the history fails structural validation
             (asymmetric matrix, negative counts).
     """
-    if not path.exists():
+    try:
+        exists = path.exists()
+    except OSError as exc:
+        raise FileLoadError(
+            f"Cannot access history file {path}: {exc}"
+        ) from exc
+
+    if not exists:
         raise FileLoadError(f"History file not found: {path}")
 
     try:

@@ -143,6 +143,51 @@ class TestLoadTeamRoster:
             load_team_roster(p)
 
 
+class TestFileAccessErrors:
+    """Tests for OSError handling in load_team_roster."""
+
+    def test_permission_error_on_exists_raises_file_load_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """PermissionError from path.exists() is wrapped in FileLoadError.
+
+        Python 3.12+ propagates PermissionError from Path.exists() rather
+        than silently returning False, so it must be caught explicitly.
+        """
+        import pathlib
+
+        def raising_exists(self: pathlib.Path, **kwargs: object) -> bool:
+            raise PermissionError(13, "Permission denied", str(self))
+
+        monkeypatch.setattr(pathlib.Path, "exists", raising_exists)
+
+        with pytest.raises(FileLoadError, match="Cannot access team roster file"):
+            load_team_roster(tmp_path / "team.yaml")
+
+    def test_permission_error_on_read_raises_file_load_error(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """PermissionError from path.read_text() is wrapped in FileLoadError."""
+        import pathlib
+
+        p = tmp_path / "team.yaml"
+        p.write_text("- name: Alice\n  timezone: UTC\n")
+
+        original = pathlib.Path.read_text
+
+        def raising_read_text(
+            self: pathlib.Path, *args: object, **kwargs: object
+        ) -> str:
+            if self == p:
+                raise PermissionError(13, "Permission denied", str(self))
+            return original(self, *args, **kwargs)  # type: ignore[arg-type]
+
+        monkeypatch.setattr(pathlib.Path, "read_text", raising_read_text)
+
+        with pytest.raises(FileLoadError, match="Cannot read team roster file"):
+            load_team_roster(p)
+
+
 class TestAvoidBuddiesCrossReference:
     """Tests for the second-pass avoid_buddies cross-reference validation."""
 
