@@ -1,4 +1,4 @@
-.PHONY: all install test lint format typecheck build clean
+.PHONY: all install test lint format typecheck build clean snap
 
 all: install test lint typecheck
 
@@ -20,8 +20,13 @@ typecheck:
 build:
 	uv build
 
+snap:
+	snapcraft pack
+
 clean:
 	rm -rf .venv .mypy_cache .ruff_cache dist .pytest_cache htmlcov
+	rm -f *.snap
+	rm -rf parts/ prime/ stage/
 	find . -type d -name __pycache__ -exec rm -rf {} +
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete

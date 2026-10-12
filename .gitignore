@@ -30,6 +30,12 @@ coverage.xml
 # filelock runtime lock files (but not uv.lock)
 *.filelock
 
+# Snap build artifacts
+*.snap
+parts/
+prime/
+stage/
+
 # OS metadata
 .DS_Store
 Thumbs.db
