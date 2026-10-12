@@ -135,9 +135,9 @@ inactive member never appears in any pair.
    partial output, and does not attempt any fallback strategy.
 
 4. **Given** a MIP solver failure that is not caused by infeasible constraints,
-   **When** pairings are requested, **Then** the tool attempts fallback strategies
-   in order (greedy, random, round-robin) and returns a valid result with the
-   solver_profile field indicating which fallback strategy was used.
+   **When** pairings are requested, **Then** the tool reports the failure with an
+   actionable error message (including the solver status and a suggestion to try a
+   different profile) and exits with a non-zero status code.
 
 ---
 
@@ -191,11 +191,11 @@ inactive member never appears in any pair.
   MUST create a new history store automatically.
 - **FR-011**: When avoidance constraints make a valid complete pairing impossible, the
   tool MUST report the conflict explicitly and exit without producing output.
-- **FR-012**: When the MIP solver raises an exception or returns a non-optimal status
-  that is not attributable to infeasible hard constraints, the tool MUST attempt a
-  sequence of progressively simpler fallback strategies (greedy, random, round-robin)
-  before reporting failure. Infeasibility caused by avoidance constraints MUST be
-  reported immediately without attempting fallback.
+- **FR-012**: When the MIP solver returns a non-optimal status that is not attributable
+  to infeasible hard constraints, the tool MUST report the failure immediately with an
+  actionable error message that includes the solver status and a suggestion to try a
+  different solver profile. No fallback strategies are attempted. Infeasibility caused
+  by avoidance constraints MUST be reported with conflict details and no fallback.
 - **FR-016**: The primary optimisation strategy MUST use Mixed Integer Programming
   (MIP) to produce solutions that are provably optimal (or within a defined gap
   tolerance) with respect to the combined history and timezone penalty objectives,
@@ -206,7 +206,7 @@ inactive member never appears in any pair.
 - **FR-018**: The tool MUST emit operational log messages to standard error at a
   configurable level (DEBUG, INFO, WARNING, ERROR). The default level MUST be INFO.
   Log output MUST cover all significant operations: input loading, validation,
-  optimisation start and completion, fallback activations, history reads and writes,
+  optimisation start and completion, history reads and writes,
   and errors. Duration and peak memory usage MUST be logged at INFO level at the end
   of each run.
 - **FR-015**: The tool MUST validate all inputs before beginning optimisation and
@@ -227,13 +227,11 @@ inactive member never appears in any pair.
   rotation.
 - **PairingResult**: The output of a single run. Contains: the list of pairs; the
   sit-out member (if any); a success flag; an optimisation score; solve duration;
-  a solver_profile string identifying the profile used — for MIP solutions this is
-  the profile name alone (e.g., "optimal"), for fallback solutions it is the profile
-  name plus the fallback strategy name (e.g., "fast_fallback_greedy_min_penalty");
-  a solver_gap value present only for MIP solutions indicating the achieved gap from
-  theoretical optimum; peak memory usage; inactive member names; and an
-  avoidance_conflicts list present only when the run failed due to infeasible hard
-  constraints.
+  a solver_profile string identifying the MIP profile used (e.g., "optimal",
+  "balanced", "fast"); a solver_gap value present only for MIP solutions indicating
+  the achieved gap from theoretical optimum; peak memory usage; inactive member names;
+  and an avoidance_conflicts list present only when the run failed due to infeasible
+  hard constraints.
 
 ## Success Criteria *(mandatory)*
 
@@ -263,8 +261,8 @@ inactive member never appears in any pair.
 - Q: What format must the tool use for structured output? → A: JSON — all structured output (pairs, quality score, metadata, and error payloads) is emitted as JSON to standard output.
 - Q: What algorithm must the primary optimisation strategy use? → A: Mixed Integer Programming (MIP) is required as the primary optimisation method.
 - Q: How is pairing history structured internally? → A: A symmetric matrix of match counts — each cell [A][B] = [B][A] holds the number of times member A and member B have been paired.
-- Q: What does the performance profile control, and what is the default? → A: Profiles adjust MIP solver settings (optimality gap tolerance and branching aggressiveness); they do not switch algorithms. The default profile is adaptive — it automatically selects solver settings based on team size. Fallback strategies (greedy → random → round-robin) are a last resort triggered by solver failure or non-optimal solver status, not by timeout.
-- Q: How does the JSON output signal whether a solution came from MIP or a fallback? → A: The solver_profile field in the result encodes this: a direct MIP solution carries the profile name only (e.g., "optimal"); a fallback solution carries the profile name plus the fallback strategy name (e.g., "fast_fallback_greedy_min_penalty"). The solver_gap field is present only for MIP solutions.
+- Q: What does the performance profile control, and what is the default? → A: Profiles adjust MIP solver settings (optimality gap tolerance and branching aggressiveness); they do not switch algorithms. The default profile is adaptive — it automatically selects solver settings based on team size. There are no fallback strategies; solver failure is reported as an error.
+- Q: How does the JSON output signal which solver profile was used? → A: The solver_profile field carries the resolved profile name (e.g., "optimal", "balanced", "fast"). The solver_gap field is present only for successful MIP solutions indicating the achieved gap from theoretical optimum.
 - Q: What file formats are used for the team roster and history store? → A: Team roster in YAML (human-authored); history store in JSON (machine-managed).
 - Q: What happens when the history store references members no longer in the current team roster? → A: Stale entries are silently ignored during pairing (never cause an error). When --update-history is used, an additional --prune-history flag MAY be provided to remove entries for absent members from the store.
 - Q: What level of operational logging must the tool provide? → A: Configurable log level (DEBUG / INFO / WARNING / ERROR) via a parameter; default INFO; all log output goes to stderr.
