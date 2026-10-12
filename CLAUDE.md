@@ -13,6 +13,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-24
 - N/A — tests operate entirely in memory; no file I/O (004-performance-fairness-tests)
 - Python 3.11 + pytest ≥ 7.0, Click ≥ 8.1 (CliRunner), Pydantic v2, (005-input-validation-tdd)
 - N/A — tests operate in memory and `tmp_path`; no new file I/O patterns (005-input-validation-tdd)
+- Python 3.11 + hypothesis ≥ 6.0 (new dev dep); existing: PyYAML ≥ 6.0, (006-fuzz-input-files)
+- N/A — tests write to `tmp_path` (pytest fixture); no persistent state (006-fuzz-input-files)
 
 - Python 3.11+ + PuLP ≥ 2.7 (MIP/CBC), Click ≥ 8.1, PyYAML ≥ 6.0, psutil ≥ 5.9 (001-buddy-scheduler)
 
@@ -32,9 +34,9 @@ cd src [ONLY COMMANDS FOR ACTIVE TECHNOLOGIES][ONLY COMMANDS FOR ACTIVE TECHNOLO
 Python 3.11+: Follow standard conventions
 
 ## Recent Changes
+- 006-fuzz-input-files: Added Python 3.11 + hypothesis ≥ 6.0 (new dev dep); existing: PyYAML ≥ 6.0,
 - 005-input-validation-tdd: Added Python 3.11 + pytest ≥ 7.0, Click ≥ 8.1 (CliRunner), Pydantic v2,
 - 004-performance-fairness-tests: Added Python 3.11 + PuLP ≥ 2.7 (CBC solver), psutil ≥ 5.9, pytest ≥ 7.0 — all already in `pyproject.toml`; `statistics` (stdlib)
-- 003-snap-strict: Added Python 3.11 (unchanged); snapcraft 8.x; base: core24 + snapcraft Python plugin (built-in); no new runtime deps
 
 
 <!-- MANUAL ADDITIONS START -->

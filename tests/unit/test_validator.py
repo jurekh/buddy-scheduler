@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+import unicodedata
 from pathlib import Path
 
 import pytest
@@ -263,3 +264,63 @@ class TestAvoidBuddiesCrossReference:
         )
         members = load_team_roster(p)
         assert members[0].avoid_buddies == ["Alice"]
+
+
+class TestUnicodeNormalization:
+    """NFC normalization behaviour for member names and avoid_buddies.
+
+    Python string equality treats NFC and NFD forms as distinct, which would
+    cause duplicate detection to miss visually identical names and break
+    avoid_buddies cross-referencing.  The loader normalises all name strings
+    to NFC so callers work with a single canonical form.
+    """
+
+    # "é" in NFD: base 'e' + combining acute (U+0301)
+    _NFD = "e\u0301"
+    # "é" in NFC: precomposed U+00E9
+    _NFC = "\u00e9"
+
+    def _yaml(self, name: str) -> str:
+        return f"- name: {name}\n  timezone: UTC\n"
+
+    def test_nfd_name_is_stored_as_nfc(self, tmp_path: Path) -> None:
+        """A member name written in NFD form is normalised to NFC on load."""
+        p = tmp_path / "team.yaml"
+        p.write_text(self._yaml(self._NFD), encoding="utf-8")
+        members = load_team_roster(p)
+        assert members[0].name == self._NFC
+        assert unicodedata.is_normalized("NFC", members[0].name)
+
+    def test_nfc_name_is_preserved(self, tmp_path: Path) -> None:
+        """A member name already in NFC form passes through unchanged."""
+        p = tmp_path / "team.yaml"
+        p.write_text(self._yaml(self._NFC), encoding="utf-8")
+        members = load_team_roster(p)
+        assert members[0].name == self._NFC
+
+    def test_nfc_and_nfd_same_name_are_duplicates(self, tmp_path: Path) -> None:
+        """NFC and NFD forms of the same name are treated as duplicate members."""
+        p = tmp_path / "team.yaml"
+        p.write_text(
+            self._yaml(self._NFC) + self._yaml(self._NFD),
+            encoding="utf-8",
+        )
+        with pytest.raises(DataValidationError, match="Duplicate"):
+            load_team_roster(p)
+
+    def test_nfd_avoid_buddy_resolves_nfc_name(self, tmp_path: Path) -> None:
+        """An avoid_buddies entry in NFD form resolves against an NFC member name."""
+        p = tmp_path / "team.yaml"
+        p.write_text(
+            textwrap.dedent(f"""\
+            - name: {self._NFC}l\u00e9
+              timezone: UTC
+            - name: Bob
+              timezone: UTC
+              avoid_buddies:
+                - {self._NFD}l\u00e9
+            """),
+            encoding="utf-8",
+        )
+        members = load_team_roster(p)
+        assert members[1].avoid_buddies == ["\u00e9l\u00e9"]

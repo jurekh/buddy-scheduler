@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -45,6 +46,10 @@ def load_team_roster(path: Path) -> list[TeamMember]:
 
     try:
         raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise FileLoadError(
+            f"Team roster file contains invalid UTF-8: {path}"
+        ) from exc
     except OSError as exc:
         raise FileLoadError(
             f"Cannot read team roster file {path}: {exc}"
@@ -82,6 +87,7 @@ def load_team_roster(path: Path) -> list[TeamMember]:
                 f"Member entry {i}: 'name' is required and must be a "
                 f"non-empty string"
             )
+        name = unicodedata.normalize("NFC", name)
 
         timezone = entry.get("timezone")
         if not timezone or not isinstance(timezone, str):
@@ -113,7 +119,9 @@ def load_team_roster(path: Path) -> list[TeamMember]:
                 name=name,
                 timezone=timezone,
                 active=active,
-                avoid_buddies=[str(x) for x in avoid_buddies],
+                avoid_buddies=[
+                    unicodedata.normalize("NFC", str(x)) for x in avoid_buddies
+                ],
             )
         )
 

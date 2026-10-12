@@ -111,6 +111,10 @@ def load_history(path: Path) -> PairingHistory:
 
     try:
         raw = path.read_text(encoding="utf-8")
+    except UnicodeDecodeError as exc:
+        raise FileLoadError(
+            f"History file contains invalid UTF-8: {path}"
+        ) from exc
     except OSError as exc:
         raise FileLoadError(f"Cannot read history file {path}: {exc}") from exc
 
@@ -122,6 +126,10 @@ def load_history(path: Path) -> PairingHistory:
     except json.JSONDecodeError as exc:
         raise FileLoadError(
             f"History file is not valid JSON: {exc}"
+        ) from exc
+    except RecursionError as exc:
+        raise FileLoadError(
+            f"History file is too deeply nested: {path}"
         ) from exc
 
     try:
