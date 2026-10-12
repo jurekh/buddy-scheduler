@@ -10,12 +10,12 @@ Entry point: `buddy_scheduler.cli:main`
 
 | Option | Type | Required | Default | Valid values |
 |--------|------|----------|---------|--------------|
-| `--team PATH` | path | **yes** | — | Any readable file path |
-| `--history PATH` | path | no | — | Any file path |
-| `--update-history` | flag | no | `false` | — |
-| `--prune-history` | flag | no | `false` | — |
-| `--history-weight FLOAT` | float | no | `1.0` | ≥ 0.0 |
-| `--tz-weight FLOAT` | float | no | `0.5` | ≥ 0.0 |
+| `--team PATH` | path | **yes** | - | Any readable file path |
+| `--history PATH` | path | no | - | Any file path |
+| `--update-history` | flag | no | `false` | - |
+| `--prune-history` | flag | no | `false` | - |
+| `--history-weight FLOAT` | float | no | `1.0` | >= 0.0 |
+| `--tz-weight FLOAT` | float | no | `0.5` | >= 0.0 |
 | `--solver-profile TEXT` | string | no | `adaptive` | `fast`, `balanced`, `optimal`, `adaptive` |
 | `--log-level TEXT` | string | no | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
 
@@ -40,9 +40,9 @@ buddy-scheduler --team /path/to/my-team.yaml
 
 ### `--history PATH`
 
-Path to the JSON history store file. When supplied, the tool reads prior pairing counts from this file and uses them to penalise repeated pairs.
+Path to the JSON history store file. When supplied, the tool reads prior pairing counts from this file and uses them to penalise repeated pairs. If the file does not exist, the run continues with an empty history (no error); the file is only created when `--update-history` is also given.
 
-If `--update-history` is active and `--history` is not supplied, the history path is inferred automatically from the team file name: `<team-stem>.history.json` in the same directory. For example, `team.yaml` → `team.history.json`.
+If `--update-history` is active and `--history` is not supplied, the history path is inferred automatically from the team file name: `<team-stem>.history.json` in the same directory. For example, `team.yaml` -> `team.history.json`.
 
 If neither `--history` nor `--update-history` is supplied, no history is loaded and no history is written (dry run).
 
@@ -75,9 +75,9 @@ buddy-scheduler --team team.yaml --update-history --prune-history
 
 ### `--history-weight FLOAT`
 
-Weight applied to the history repetition penalty in the objective function. A higher value makes the solver try harder to avoid recently repeated pairs. Setting to `0.0` disables the history penalty entirely (pairings are chosen based on timezone compatibility only).
+Weight applied to the history repetition penalty in the objective function. A higher value makes the solver try harder to avoid recently repeated pairs. Setting to `0.0` disables the history penalty on pairs (pairings are chosen based on timezone compatibility only). For odd-sized teams, the choice of who sits out still uses the sit-out counts from history; that cost is not scaled by this weight.
 
-Default: `1.0` | Valid range: ≥ 0.0 | Negative values are a validation error (exit 1).
+Default: `1.0` | Valid range: >= 0.0 | Negative values are a validation error (exit 1).
 
 ```bash
 buddy-scheduler --team team.yaml --history-weight 2.0
@@ -97,7 +97,7 @@ buddy-scheduler --team team.yaml --history-weight -1.0
 
 Weight applied to the timezone incompatibility penalty in the objective function. A higher value makes the solver prefer to pair members in similar timezones. Setting to `0.0` disables timezone scoring entirely (pairings are chosen based on history only).
 
-Default: `0.5` | Valid range: ≥ 0.0 | Negative values are a validation error (exit 1).
+Default: `0.5` | Valid range: >= 0.0 | Negative values are a validation error (exit 1).
 
 ```bash
 buddy-scheduler --team team.yaml --tz-weight 0.5
@@ -120,9 +120,9 @@ Controls the MIP solver's gap tolerance and time limit. Case-insensitive.
 | Profile | Gap tolerance | Time limit | When to use |
 |---------|--------------|------------|-------------|
 | `fast` | 20% | 10 s | Very large teams (> 60 members) where solve speed matters more than optimality |
-| `balanced` | 1% | 60 s | Mid-size teams (16–60 members); good tradeoff of speed and quality |
-| `optimal` | 0.1% | 300 s | Small teams (≤ 15 members) where the best possible assignment is desired |
-| `adaptive` | (automatic) | (automatic) | **Default.** Selects a profile based on team size: N ≤ 15 → `optimal`, 16–60 → `balanced`, N > 60 → `fast` |
+| `balanced` | 1% | 60 s | Mid-size teams (16-60 members); good tradeoff of speed and quality |
+| `optimal` | 0.1% | 300 s | Small teams (<= 15 members) where the best possible assignment is desired |
+| `adaptive` | (automatic) | (automatic) | **Default.** Selects a profile based on team size: N <= 15 -> `optimal`, 16-60 -> `balanced`, N > 60 -> `fast` |
 
 The `solver_profile` field in the output always shows the resolved profile name (e.g., `"optimal"` when `adaptive` selects `optimal` for a small team).
 
@@ -146,7 +146,7 @@ Sets the verbosity of diagnostic messages written to stderr. Case-insensitive.
 
 | Level | What is shown |
 |-------|---------------|
-| `DEBUG` | All messages, including internal solver details |
+| `DEBUG` | All messages. Currently the tool emits nothing at DEBUG level, so the output matches `INFO` |
 | `INFO` | Normal operational messages (file loads, solve start/end, history read/write) |
 | `WARNING` | Warnings only (e.g., `--prune-history` without `--update-history`) |
 | `ERROR` | Errors only |
@@ -171,7 +171,7 @@ buddy-scheduler --team team.yaml --log-level VERBOSE
 
 | Stream | Content |
 |--------|---------|
-| `stdout` | JSON result document — always present on every execution path, including failure |
+| `stdout` | JSON result document - always present on every execution path, including failure |
 | `stderr` | Log messages and diagnostic output only |
 
 ---
@@ -180,8 +180,8 @@ buddy-scheduler --team team.yaml --log-level VERBOSE
 
 | Code | Condition |
 |------|-----------|
-| `0` | Successful run — pairs produced and emitted |
-| `1` | Input validation failure or infeasible avoidance constraints |
+| `0` | Successful run - pairs produced and emitted |
+| `1` | Input validation failure, fewer than 2 active members, or infeasible avoidance constraints |
 | `2` | MIP solver failure |
 
 ---

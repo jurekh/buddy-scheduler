@@ -43,18 +43,20 @@ The output will confirm Charlie is excluded. The `inactive_members` field in the
 {
   "success": true,
   "pairs": [
-    ["Alice", "Diana"]
+    ["Alice", "Bob"]
   ],
-  "sitting_out": "Bob",
+  "sitting_out": "Diana",
   "optimization_score": 0.0,
   "solve_time": 0.031,
   "solver_profile": "optimal",
   "history_updated": false,
+  "peak_memory_mb": 36.1,
+  "memory_delta_mb": 0.02,
   "inactive_members": ["Charlie"]
 }
 ```
 
-Charlie does not appear in `pairs` or `sitting_out`. Their history is preserved — when they return, prior pairing data is still used to inform future pairings.
+Charlie does not appear in `pairs` or `sitting_out`. Their history is preserved - when they return, prior pairing data is still used to inform future pairings.
 
 ---
 
@@ -87,7 +89,7 @@ buddy-scheduler --team team.yaml
 
 ## Notes
 
-- `active` defaults to `true` — you only need to specify it when setting it to `false`.
+- `active` defaults to `true` - you only need to specify it when setting it to `false`.
 - Inactive members are not counted when determining whether the team has an odd or even number of members. If removing inactive members results in an odd active count, one active member will sit out.
 - The history file is not affected by marking a member as inactive. Their historical pair counts and sit-out counts are retained and will be used when they rejoin.
 - To permanently remove a member from history after they leave the team, see [How to track pairing history](track-history.md) for the `--prune-history` option.

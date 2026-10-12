@@ -1,6 +1,6 @@
 # How to Configure Avoidance Constraints
 
-This guide explains how to prevent specific pairs from ever forming — for example, a manager and their direct report who already meet regularly.
+This guide explains how to prevent specific pairs from ever forming - for example, a manager and their direct report who already meet regularly.
 
 **Prerequisite**: You have completed the [Getting Started tutorial](../tutorial/getting-started.md) and have a working `team.yaml` file.
 
@@ -29,7 +29,7 @@ In this example, Bob is the manager and Alice is their direct report. Add `avoid
   timezone: "America/New_York"
 ```
 
-The `avoid_buddies` list contains names of members that this person should never be paired with. The constraint is symmetric — if Bob avoids Alice, Alice will also never be paired with Bob, regardless of whether Alice's entry also lists Bob.
+The `avoid_buddies` list contains names of members that this person should never be paired with. The constraint is symmetric - if Bob avoids Alice, Alice will also never be paired with Bob, regardless of whether Alice's entry also lists Bob.
 
 ---
 
@@ -53,11 +53,13 @@ The output will not contain the pair `["Alice", "Bob"]` in `pairs`:
   "optimization_score": 1.0,
   "solve_time": 0.038,
   "solver_profile": "optimal",
-  "history_updated": false
+  "history_updated": false,
+  "peak_memory_mb": 35.8,
+  "memory_delta_mb": 0.02
 }
 ```
 
-Alice and Bob are in different pairs. Avoidance constraints are never relaxed — the pair will never appear regardless of history or timezone settings.
+Alice and Bob are in different pairs. Avoidance constraints are never relaxed - the pair will never appear regardless of history or timezone settings.
 
 ---
 
@@ -74,6 +76,8 @@ If avoidance constraints are so restrictive that no valid pairing exists (for ex
   "solve_time": 0.012,
   "solver_profile": "optimal",
   "history_updated": false,
+  "peak_memory_mb": 35.8,
+  "memory_delta_mb": 0.02,
   "avoidance_conflicts": [
     "Alice has no eligible pairing partners"
   ],

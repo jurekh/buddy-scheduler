@@ -24,11 +24,10 @@ A successful run produces exit code `0` and a JSON document with the following f
 
 | Field | Type | Condition |
 |-------|------|-----------|
-| `solver_gap` | number | Present when the solver terminated early (gap > 0) — the relative gap between the best found solution and the theoretical optimum |
-| `peak_memory_mb` | number | Peak RSS memory in megabytes at the end of the solve |
-| `memory_delta_mb` | number | Change in RSS memory in megabytes during the solve |
+| `peak_memory_mb` | number | RSS memory of the buddy-scheduler process in megabytes, measured after the solve. Present whenever the solver ran (success or infeasible). |
+| `memory_delta_mb` | number | Change in RSS memory in megabytes across the solve. Present whenever the solver ran. |
 | `inactive_members` | array of strings | Names of members excluded because `active: false` in the roster. Present only when at least one inactive member exists. |
-| `avoidance_conflicts` | array of strings | Descriptions of members with no eligible pairing partners due to avoidance constraints. Present only on an infeasible run. |
+| `avoidance_conflicts` | array of strings | Descriptions of members with no eligible pairing partners due to avoidance constraints. Present only on an infeasible run where at least one member has no eligible partner left; an infeasible run without such a member omits this field. |
 
 ### Running a success example
 
@@ -50,7 +49,9 @@ buddy-scheduler --team team.yaml
   "optimization_score": 0.0,
   "solve_time": 0.042,
   "solver_profile": "optimal",
-  "history_updated": false
+  "history_updated": false,
+  "peak_memory_mb": 35.9,
+  "memory_delta_mb": 0.02
 }
 ```
 
@@ -68,6 +69,8 @@ buddy-scheduler --team team.yaml
   "solve_time": 0.055,
   "solver_profile": "optimal",
   "history_updated": true,
+  "peak_memory_mb": 36.1,
+  "memory_delta_mb": 0.02,
   "inactive_members": ["Frank"]
 }
 ```
@@ -92,7 +95,7 @@ Additional fields from the success schema (`pairs`, `sitting_out`, etc.) may als
 buddy-scheduler --team team.yaml
 ```
 
-### Failure example — validation error
+### Failure example - validation error
 
 ```json
 {
@@ -101,7 +104,23 @@ buddy-scheduler --team team.yaml
 }
 ```
 
-### Failure example — infeasible constraints
+### Failure example - fewer than 2 active members
+
+```json
+{
+  "success": false,
+  "pairs": [],
+  "sitting_out": null,
+  "optimization_score": 0.0,
+  "solve_time": 0.0,
+  "solver_profile": "optimal",
+  "history_updated": false,
+  "inactive_members": ["Bob"],
+  "error": "Fewer than 2 active members; pairing is not possible."
+}
+```
+
+### Failure example - infeasible constraints
 
 ```json
 {
@@ -112,6 +131,8 @@ buddy-scheduler --team team.yaml
   "solve_time": 0.011,
   "solver_profile": "optimal",
   "history_updated": false,
+  "peak_memory_mb": 35.8,
+  "memory_delta_mb": 0.02,
   "avoidance_conflicts": [
     "Alice has no eligible pairing partners"
   ],
@@ -125,8 +146,8 @@ buddy-scheduler --team team.yaml
 
 | Code | Condition |
 |------|-----------|
-| `0` | Successful run — pairs produced and emitted |
-| `1` | Input validation failure (bad file, invalid field, unrecognised name in `avoid_buddies`) or infeasible avoidance constraints |
+| `0` | Successful run - pairs produced and emitted |
+| `1` | Input validation failure (bad file, invalid field, unrecognised name in `avoid_buddies`), fewer than 2 active members, or infeasible avoidance constraints |
 | `2` | MIP solver failure (non-optimal solver status not caused by infeasible constraints) |
 
 On exit code `1` or `2`, the JSON document on stdout always contains `"success": false` and an `"error"` field describing the problem.

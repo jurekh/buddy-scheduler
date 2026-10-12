@@ -53,7 +53,7 @@ When a team member leaves, their history entries can accumulate and affect futur
 buddy-scheduler --team team.yaml --update-history --prune-history
 ```
 
-`--prune-history` removes history entries for any member who is not currently in `team.yaml`. It has no effect without `--update-history` — if you pass `--prune-history` alone, the tool emits a warning and continues normally:
+`--prune-history` removes history entries for any member who is not currently in `team.yaml`. It has no effect without `--update-history` - if you pass `--prune-history` alone, the tool emits a warning and continues normally:
 
 <!-- test: cli fixture=minimal.yaml exit=0 -->
 ```bash
@@ -66,4 +66,4 @@ buddy-scheduler --team team.yaml --prune-history
 
 The history file is a JSON file managed by the tool. You do not need to edit it directly. The tool records how many times each pair has been together and how many times each member has sat out. This information is used to weight the pairing objective in the next round.
 
-If the history file does not exist when you run with `--update-history`, the tool creates it automatically with an empty record — no manual setup is needed.
+If the history file does not exist when you run with `--update-history`, the tool creates it automatically with an empty record - no manual setup is needed.

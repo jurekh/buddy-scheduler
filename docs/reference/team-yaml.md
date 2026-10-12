@@ -23,8 +23,8 @@ The file must be a YAML list. Each element is a mapping representing one team me
 
 | Field | Type | Required | Default | Constraints |
 |-------|------|----------|---------|-------------|
-| `name` | string | **yes** | — | Non-empty; must be unique within the file |
-| `timezone` | string | **yes** | — | Non-empty; free-form string (e.g. `"UTC+0"`, `"America/New_York"`, `"EMEA"`) |
+| `name` | string | **yes** | - | Non-empty; must be unique within the file |
+| `timezone` | string | **yes** | - | Non-empty; free-form string (e.g. `"UTC+0"`, `"America/New_York"`, `"EMEA"`) |
 | `active` | boolean | no | `true` | Must be a YAML boolean (`true` or `false`); strings like `"yes"` are a validation error |
 | `avoid_buddies` | list of strings | no | `[]` | Each entry must exactly match the `name` of another member in the same file; unrecognised names are a validation error |
 
@@ -42,7 +42,7 @@ Names are case-sensitive. `"Alice"` and `"alice"` are treated as different membe
 
 ### `timezone`
 
-A free-form string describing where the member works. The tool uses string similarity between timezone labels to score timezone compatibility — it does not parse timezone names against any standard database.
+A free-form string describing where the member works. The tool uses string similarity between timezone labels to score timezone compatibility - it does not parse timezone names against any standard database.
 
 **Implication for label consistency**: Members with identical timezone strings score zero timezone penalty with each other. Members with very different strings score high penalty. If your team uses inconsistent labels (e.g., `"UTC+1"` vs `"Europe/Paris"` for the same region), the tool may not recognise they are in the same timezone. Using consistent labels across all members in the same timezone improves pairing quality.
 
@@ -52,8 +52,8 @@ A free-form string describing where the member works. The tool uses string simil
 
 Controls whether a member participates in the current pairing round.
 
-- `active: true` (default) — member is included in pairing
-- `active: false` — member is excluded; they appear in `inactive_members` in the output
+- `active: true` (default) - member is included in pairing
+- `active: false` - member is excluded; they appear in `inactive_members` in the output
 
 Marking a member inactive does not remove their history. When they return, prior pairing data is still used.
 
@@ -61,7 +61,7 @@ Marking a member inactive does not remove their history. When they return, prior
 
 ### `avoid_buddies`
 
-A list of member names that this member should never be paired with. The constraint is symmetric — listing `Bob` under Alice's `avoid_buddies` also prevents Bob from being paired with Alice, even if Bob's entry does not mention Alice.
+A list of member names that this member should never be paired with. The constraint is symmetric - listing `Bob` under Alice's `avoid_buddies` also prevents Bob from being paired with Alice, even if Bob's entry does not mention Alice.
 
 Every name in `avoid_buddies` must exactly match the `name` field of another member in the file. An unrecognised name causes the tool to exit with a validation error (exit code 1) before attempting to solve.
 
@@ -109,8 +109,12 @@ In this roster:
 | Condition | Error type | Exit code |
 |-----------|-----------|-----------|
 | File not found or unreadable | File load error | 1 |
+| Path is a directory | File load error | 1 |
+| File is not valid UTF-8 | File load error | 1 |
+| File is not valid YAML | File load error | 1 |
 | File is empty | File load error | 1 |
 | File is not a YAML list | File load error | 1 |
+| A list entry is not a mapping | Validation error | 1 |
 | `name` missing or empty | Validation error | 1 |
 | `timezone` missing or empty | Validation error | 1 |
 | Duplicate `name` | Validation error | 1 |

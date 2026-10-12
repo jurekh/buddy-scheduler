@@ -16,7 +16,7 @@ These objectives conflict: a pair that is historically fresh might span very dif
 
 The tool minimises a weighted penalty sum over all candidate pairs:
 
-> **Minimise** Σ ( `history_weight` × `pair_count(a, b)` + `tz_weight` × `tz_penalty(a, b)` ) × `x(a, b)`
+> **Minimise** sum ( `history_weight` * `pair_count(a, b)` + `tz_weight` * `tz_penalty(a, b)` ) * `x(a, b)`
 
 where:
 
@@ -25,9 +25,9 @@ where:
 - `tz_penalty(a, b)` is a value in [0, 1] reflecting how different the timezone labels of *a* and *b* are (0 = identical labels, 1 = no characters in common)
 - `history_weight` and `tz_weight` are the `--history-weight` and `--tz-weight` parameters you supply
 
-Raising `--history-weight` causes the solver to try harder to avoid repeating pairs that have appeared frequently in history. Setting `--history-weight 0.0` disables the history penalty entirely — pairings are then chosen based solely on timezone compatibility.
+Raising `--history-weight` causes the solver to try harder to avoid repeating pairs that have appeared frequently in history. Setting `--history-weight 0.0` disables the history penalty on pairs - pairings are then chosen based solely on timezone compatibility. The sit-out cost (see below) is not scaled by this weight, so sit-out fairness still applies.
 
-Raising `--tz-weight` causes the solver to try harder to pair members whose timezone labels are similar. Setting `--tz-weight 0.0` disables timezone scoring — pairings are then based solely on history.
+Raising `--tz-weight` causes the solver to try harder to pair members whose timezone labels are similar. Setting `--tz-weight 0.0` disables timezone scoring - pairings are then based solely on history.
 
 The `optimization_score` field in the output is the value of this sum for the solution that was found. A score of `0.0` means no history penalty and no timezone penalty accumulated.
 
@@ -49,7 +49,7 @@ Because avoidance constraints are hard, an over-constrained team (for example, a
 
 When the active team has an odd number of members, exactly one person sits out. The tool adds their sit-out cost to the objective alongside pair costs:
 
-> **Sit-out cost for member a** = (number of times *a* has sat out in recorded history) × `sit_out_variable(a)`
+> **Sit-out cost for member a** = (number of times *a* has sat out in recorded history) * `sit_out_variable(a)`
 
 This means the solver prefers to assign the sit-out to whoever has sat out least often in the history. Members who have never sat out are preferred over those who have sat out many times.
 
@@ -63,11 +63,11 @@ The tool does not parse timezone strings against any standard timezone database.
 
 The `tz_penalty` between two labels is computed as:
 
-> `tz_penalty(a, b)` = 1 − `SequenceMatcher.ratio(label_a, label_b)`
+> `tz_penalty(a, b)` = 1 - `SequenceMatcher.ratio(label_a, label_b)`
 
-A ratio of 1.0 means the strings are identical → penalty 0.0. A ratio of 0.0 means the strings share no characters → penalty 1.0.
+A ratio of 1.0 means the strings are identical -> penalty 0.0. A ratio of 0.0 means the strings share no characters -> penalty 1.0.
 
-**Practical implication**: The scoring only works as intended if your team uses consistent label formats. Members with labels `"UTC+0"` and `"UTC+0"` score zero penalty — the solver recognises them as timezone-compatible. Members with labels `"UTC+1"` and `"Europe/Paris"` score a moderate penalty even if they work in the same timezone, because the strings are textually different. Using consistent labels across your entire roster (for example, always using `"America/New_York"` rather than mixing `"EST"`, `"UTC-5"`, and `"New York"`) improves the quality of timezone-based grouping.
+**Practical implication**: The scoring only works as intended if your team uses consistent label formats. Members with labels `"UTC+0"` and `"UTC+0"` score zero penalty - the solver recognises them as timezone-compatible. Members with labels `"UTC+1"` and `"Europe/Paris"` score a moderate penalty even if they work in the same timezone, because the strings are textually different. Using consistent labels across your entire roster (for example, always using `"America/New_York"` rather than mixing `"EST"`, `"UTC-5"`, and `"New York"`) improves the quality of timezone-based grouping.
 
 ---
 
@@ -83,13 +83,13 @@ The four profiles are:
 
 | Profile | Gap tolerance | Time limit | Adaptive selection threshold |
 |---------|--------------|------------|------------------------------|
-| `optimal` | 0.1% | 300 s | Active team ≤ 15 members |
-| `balanced` | 1% | 60 s | Active team 16–60 members |
+| `optimal` | 0.1% | 300 s | Active team <= 15 members |
+| `balanced` | 1% | 60 s | Active team 16-60 members |
 | `fast` | 20% | 10 s | Active team > 60 members |
 | `adaptive` | (automatic) | (automatic) | Selects based on team size |
 
-The default profile is `adaptive`. For most teams (fewer than 60 active members), `adaptive` selects `balanced` or `optimal` and finds near-perfect assignments quickly. For very large teams, it falls back to `fast` to keep runtime manageable at the cost of solution quality.
+The default profile is `adaptive`. For teams of 60 or fewer active members, `adaptive` selects `optimal` (up to 15) or `balanced` (16 to 60). For larger teams it selects `fast`, which shortens runtime at the cost of a larger allowed gap from the optimum.
 
 You can override the selection with `--solver-profile` if the default is not appropriate for your situation. See the [CLI reference](../reference/cli.md) for details.
 
-The `solver_profile` field in the output always shows the resolved profile name — `"optimal"`, `"balanced"`, or `"fast"` — never `"adaptive"`.
+The `solver_profile` field in the output always shows the resolved profile name - `"optimal"`, `"balanced"`, or `"fast"` - never `"adaptive"`.

@@ -9,7 +9,8 @@ By the end you will have a working installation and will have generated and read
 ## Prerequisites
 
 - A terminal (Linux or macOS; Windows users should use WSL)
-- Python 3.11 or later (for the Python package installation path)
+- For options A and B: Python 3.11 or later and [uv](https://docs.astral.sh/uv/)
+- For option C: snapcraft and LXD (Linux only)
 
 ---
 
@@ -43,33 +44,23 @@ Verify the installation:
 buddy-scheduler --help
 ```
 
-### Option C: Install from PyPI
-
-Install the published package using [uv](https://docs.astral.sh/uv/):
-
-```bash
-uv tool install buddy-scheduler
-```
-
-Verify the installation:
-
-```bash
-buddy-scheduler --help
-```
-
-### Option D: Snap package (Linux only, built from source)
+### Option C: Snap package (Linux only, built from source)
 
 Install [snapcraft](https://snapcraft.io/snapcraft) and
 [LXD](https://documentation.ubuntu.com/lxd/), then build and install the snap
 from the repository root:
 
 ```bash
-snapcraft --use-lxd
+snapcraft pack --use-lxd
 sudo snap install --dangerous buddy-scheduler_*.snap
 ```
 
 The `--dangerous` flag is required when installing a locally built snap that
 has not been signed by the Snap Store.
+
+The snap uses strict confinement with only the `home` interface, so it can
+read and write roster and history files only under your home directory, and
+not in hidden directories (names starting with `.`).
 
 Verify the installation:
 
@@ -103,7 +94,7 @@ Each entry represents one team member. The only required fields are `name` (a un
 
 ## Step 3: Generate your first pairing
 
-Run the tool with your team file. No history is loaded and no history is saved — this is a dry run:
+Run the tool with your team file. No history is loaded and no history is saved - this is a dry run:
 
 <!-- test: cli fixture=minimal.yaml exit=0 -->
 ```bash
@@ -123,7 +114,9 @@ You will see JSON output printed to your terminal, similar to:
   "optimization_score": 0.0,
   "solve_time": 0.042,
   "solver_profile": "optimal",
-  "history_updated": false
+  "history_updated": false,
+  "peak_memory_mb": 35.9,
+  "memory_delta_mb": 0.02
 }
 ```
 
@@ -131,7 +124,7 @@ You will see JSON output printed to your terminal, similar to:
 
 ## Step 4: Read the output
 
-Every field in the output is described below.
+The fields in the output above are described below.
 
 | Field | What it means |
 |-------|---------------|
@@ -142,6 +135,10 @@ Every field in the output is described below.
 | `solve_time` | Time in seconds taken by the MIP solver |
 | `solver_profile` | The solver profile that was used (`fast`, `balanced`, `optimal`). When you pass `--solver-profile adaptive` (the default), this shows the profile that was selected for your team size. |
 | `history_updated` | `true` if the history file was updated during this run; `false` if this was a dry run |
+| `peak_memory_mb` | Memory used by the tool, in megabytes, measured after the solve |
+| `memory_delta_mb` | Change in memory use during the solve, in megabytes |
+
+Some fields appear only in specific situations, such as `inactive_members` and `error`. See the [output format reference](../reference/output-format.md) for the full list.
 
 In the example above, Alice and Bob are paired together (both `UTC+0`), and Charlie and Diana are paired together (both `America/New_York`). The tool preferred to pair members who share the same timezone.
 
