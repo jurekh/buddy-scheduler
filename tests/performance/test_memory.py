@@ -1,8 +1,13 @@
 """Memory metric tests for the buddy-pairing solver.
 
 Verifies that ``peak_memory_mb`` and ``memory_delta_mb`` are populated,
-non-negative, scale with team size, and stay within the 200 MB ceiling for a
-50-member full-history run.
+non-negative, and scale with team size.
+
+``peak_memory_mb`` is the absolute process RSS after the solve; its value
+depends on how much memory the process had already allocated from prior test
+runs.  ``memory_delta_mb`` is the incremental RSS change caused by the solve
+itself and is test-order-independent, so it is used for the upper-bound
+assertion.
 
 All tests are marked ``slow`` and excluded from the default ``pytest`` run.
 Run explicitly with ``pytest -m slow tests/performance/test_memory.py``.
@@ -18,10 +23,10 @@ from buddy_scheduler.solver.profiles import SolverProfile
 
 from .conftest import make_team
 
-# Measured at ~23.4 MB on a 50-member full-history run (stable across runs).
-# 50 MB gives ~2× headroom for GC variance and CI hardware differences while
-# still catching meaningful regressions.
-PEAK_MEMORY_UPPER_BOUND_MB: float = 50.0
+# Measured memory_delta_mb at 0.66–0.89 MB on a 50-member full-history run.
+# 5 MB gives ~6× headroom for GC variance and is test-order-independent because
+# it measures incremental solver allocation, not absolute process RSS.
+MEMORY_DELTA_UPPER_BOUND_MB: float = 5.0
 
 
 @pytest.mark.slow
@@ -70,8 +75,14 @@ def test_memory_scales_with_team_size() -> None:
 
 
 @pytest.mark.slow
-def test_peak_memory_upper_bound_50_members() -> None:
-    """Peak RSS stays below 200 MB for a 50-member team with a full history."""
+def test_memory_delta_upper_bound_50_members() -> None:
+    """Solver memory delta stays below 5 MB for a 50-member team with a full history.
+
+    ``memory_delta_mb`` measures incremental RSS change caused by the solve
+    itself (rss_after - rss_before inside the solver), so it is independent of
+    how much memory prior tests have already allocated in the process.
+    Measured at 0.66–0.89 MB; the 5 MB ceiling gives ~6× headroom.
+    """
     n = 50
     members = make_team(n)
     history = PairingHistory()
@@ -85,10 +96,10 @@ def test_peak_memory_upper_bound_50_members() -> None:
     )
 
     assert result.success
-    assert result.peak_memory_mb is not None
-    assert result.peak_memory_mb < PEAK_MEMORY_UPPER_BOUND_MB, (
-        f"Peak memory {result.peak_memory_mb:.1f} MB exceeded "
-        f"{PEAK_MEMORY_UPPER_BOUND_MB} MB ceiling"
+    assert result.memory_delta_mb is not None
+    assert result.memory_delta_mb < MEMORY_DELTA_UPPER_BOUND_MB, (
+        f"Memory delta {result.memory_delta_mb:.2f} MB exceeded "
+        f"{MEMORY_DELTA_UPPER_BOUND_MB} MB ceiling"
     )
 
 

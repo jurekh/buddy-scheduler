@@ -67,7 +67,8 @@ and that a larger team uses no less memory than a smaller one under identical co
    under identical conditions, **When** both complete, **Then** the large team's
    `memory_delta_mb` is greater than or equal to the small team's.
 3. **Given** a team of 50 members with a fully-populated prior history matrix,
-   **When** the scheduler runs, **Then** peak memory stays below 50 MB.
+   **When** the scheduler runs, **Then** the incremental memory allocated by the
+   solve (delta, not absolute RSS) stays below 5 MB.
 4. **Given** the minimum valid team size (2 active members), **When** the scheduler
    runs, **Then** both memory metrics are non-negative and the solve completes
    without error.
@@ -164,8 +165,11 @@ times and reported profile names to verify monotonicity and profile resolution.
   are populated and positive after every successful solve.
 - **FR-004**: Memory scaling tests MUST demonstrate that a larger team produces a
   memory_delta_mb greater than or equal to that of a smaller team under the same conditions.
-- **FR-005**: The test suite MUST include a peak memory upper-bound assertion for a
-  50-member team with full history (≤ 50 MB; measured at ~23.4 MB with ~2× headroom).
+- **FR-005**: The test suite MUST include a memory upper-bound assertion for a
+  50-member team with full history, asserting on ``memory_delta_mb`` (incremental
+  solver allocation, test-order-independent) rather than ``peak_memory_mb``
+  (absolute process RSS, which varies with test execution order). Bound: ≤ 5 MB
+  (measured at 0.66–0.89 MB; ~6× headroom).
 - **FR-006**: Fairness tests MUST simulate at least 10 consecutive rounds, updating
   history after each round, and MUST assert that pairwise meeting counts have a
   standard deviation ≤ 0.5 and max-gap ≤ 1 when history_weight > 0.
@@ -207,8 +211,9 @@ times and reported profile names to verify monotonicity and profile resolution.
   standard deviation of pairwise meeting counts ≤ 0.5 in every run (deterministic
   due to structured, seed-free team generation; 0.5 is the theoretical minimum for
   integer counts at this round/team-size combination).
-- **SC-003**: Memory metrics are populated and within expected bounds (peak < 50 MB
-  for a 50-member full-history run) across 3 consecutive runs.
+- **SC-003**: Memory metrics are populated and within expected bounds
+  (``memory_delta_mb`` < 5 MB for a 50-member full-history run) across 3
+  consecutive runs and regardless of test execution order.
 - **SC-004**: The adaptive profile resolves to the correct name at each documented
   threshold; this is verified by 4 specific tests covering boundary conditions
   (N = 15, 16, 60, 61).
@@ -225,8 +230,10 @@ times and reported profile names to verify monotonicity and profile resolution.
 - Timing thresholds are based on observed solve times from the previous
   buddy-scheduler implementation (30 members < 10 s, 50 members < 30 s, 100 members
   < 5 s with FAST/adaptive) and are tuned for the CBC solver on typical CI hardware.
-- Memory bound (< 50 MB peak for a 50-member run) is derived from the measured
-  value of ~23.4 MB (stable to < 0.2 MB across runs), with a 2× safety margin.
+- Memory bound (``memory_delta_mb`` < 5 MB for a 50-member run) is derived from
+  the measured delta of 0.66–0.89 MB with ~6× headroom. ``peak_memory_mb``
+  (absolute process RSS) is not used for the bound because its value depends on
+  test execution order; ``memory_delta_mb`` is test-order-independent.
 - Fairness assertions (std-dev ≤ 0.5, max-gap ≤ 1 over ≥ 10 rounds) represent the
   theoretical minimum for integer-valued distributions at these round/team-size
   combinations; the solver achieves this minimum. Assumes history_weight ≥ 1.0;
