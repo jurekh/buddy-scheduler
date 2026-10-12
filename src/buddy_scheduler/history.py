@@ -164,7 +164,7 @@ def save_history(history: PairingHistory, path: Path) -> None:
             )
             try:
                 with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
-                    json.dump(payload, f, indent=2)
+                    json.dump(payload, f, indent=2, sort_keys=True)
                     f.flush()
                     os.fsync(f.fileno())
             except OSError:
